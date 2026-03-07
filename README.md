@@ -50,6 +50,18 @@ Install skills via Claude Code:
 
 ## Quick Start
 
+### Auto-Setup (Recommended)
+
+Clone and run the setup script — it installs dependencies, configures your API key, and adds servers to Claude Desktop automatically:
+
+```bash
+git clone https://github.com/alihsh0/gemini-media-mcp.git
+cd gemini-media-mcp
+python setup.py
+```
+
+The setup script offers a menu to install VEO, NanoBanana, or both.
+
 ### VEO Server -- Claude Desktop
 
 ```json
@@ -207,6 +219,7 @@ gemini-media-mcp/
 │               └── SKILL.md
 ├── .claude-plugin/
 │   └── marketplace.json
+├── setup.py                  # Auto-setup script (deps + config)
 ├── .env.example
 ├── .gitignore
 ├── CHANGELOG.md
