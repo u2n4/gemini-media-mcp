@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "veo-mcp-server"
+version = "1.0.0"
+description = "MCP server for 4K video generation using Google VEO 3.1 -- text-to-video, image-to-video, video extension"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "alihsh0" },
+]
+keywords = [
+    "mcp", "model-context-protocol", "claude", "veo", "gemini",
+    "video-generation", "text-to-video", "4k", "ai-video",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Video",
+]
+dependencies = [
+    "mcp>=1.0.0",
+    "google-genai>=1.5.0",
+    "httpx>=0.24.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/alihsh0/gemini-media-mcp"
+Repository = "https://github.com/alihsh0/gemini-media-mcp"
+
+[project.scripts]
+veo-mcp-server = "veo_mcp_server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/veo_mcp_server"]
