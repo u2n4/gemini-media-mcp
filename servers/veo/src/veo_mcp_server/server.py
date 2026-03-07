@@ -1131,6 +1131,11 @@ def veo_api_status() -> str:
 
 
 # ── Entry Point ──────────────────────────────────────────────────────────────
-if __name__ == "__main__":
+def main():
+    """Entry point for the MCP server."""
     log.info("Starting VEO 3.1 MCP Server (async job pattern)...")
     mcp.run()
+
+
+if __name__ == "__main__":
+    main()

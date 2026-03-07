@@ -15,3 +15,6 @@ videos/
 *.wav
 *_thumb.jpeg
 generated-images/
+dist/
+*.egg-info/
+build/

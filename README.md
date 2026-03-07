@@ -52,7 +52,7 @@ Install skills via Claude Code:
 
 ### Auto-Setup (Recommended)
 
-Clone and run the setup script — it installs dependencies, configures your API key, and adds servers to Claude Desktop automatically:
+Clone and run the setup script -- it installs dependencies, configures your API key, and adds servers to Claude Desktop automatically:
 
 ```bash
 git clone https://github.com/alihsh0/gemini-media-mcp.git
@@ -62,16 +62,17 @@ python setup.py
 
 The setup script offers a menu to install VEO, NanoBanana, or both.
 
-### VEO Server -- Claude Desktop
+### VEO Server
 
+**uvx (zero-install):**
 ```json
 {
   "mcpServers": {
     "veo": {
-      "command": "python",
-      "args": ["path/to/gemini-media-mcp/servers/veo/server.py"],
+      "command": "uvx",
+      "args": ["veo-mcp-server"],
       "env": {
-        "GEMINI_API_KEY": "your_key_here",
+        "GEMINI_API_KEY": "your_key",
         "VIDEO_OUTPUT_DIR": "./videos"
       }
     }
@@ -79,38 +80,41 @@ The setup script offers a menu to install VEO, NanoBanana, or both.
 }
 ```
 
-### NanoBanana Server -- Claude Desktop
+**Claude Code:**
+```bash
+claude mcp add veo -s user -e GEMINI_API_KEY=your_key -- uvx veo-mcp-server
+```
 
+**pip install:**
+```bash
+pip install veo-mcp-server
+```
+
+### NanoBanana Server
+
+**uvx (zero-install):**
 ```json
 {
   "mcpServers": {
     "nanobanana": {
-      "command": "python",
-      "args": ["-m", "nanobanana_mcp_server.server"],
+      "command": "uvx",
+      "args": ["nanobanana-mcp-server"],
       "env": {
-        "GEMINI_API_KEY": "your_key_here"
+        "GEMINI_API_KEY": "your_key"
       }
     }
   }
 }
 ```
 
-Note: Install NanoBanana from pip: `pip install nanobanana-mcp-server`
+**Claude Code:**
+```bash
+claude mcp add nanobanana -s user -e GEMINI_API_KEY=your_key -- uvx nanobanana-mcp-server
+```
 
-Or use the bundled version:
-```json
-{
-  "mcpServers": {
-    "nanobanana": {
-      "command": "python",
-      "args": ["-m", "servers.nanobanana.nanobanana_mcp_server.server"],
-      "env": {
-        "GEMINI_API_KEY": "your_key_here"
-      },
-      "cwd": "path/to/gemini-media-mcp"
-    }
-  }
-}
+**pip install:**
+```bash
+pip install nanobanana-mcp-server
 ```
 
 ## VEO Server
@@ -193,12 +197,18 @@ AI image generation powered by Google Gemini Imagen 3. Supports Pro (maximum qua
 ```
 gemini-media-mcp/
 ├── servers/
-│   ├── veo/                       # VEO 3.1 MCP Server
-│   │   ├── server.py
-│   │   └── requirements.txt
-│   └── nanobanana/                # NanoBanana MCP Server
-│       ├── nanobanana_mcp_server/ # Package
-│       └── requirements.txt
+│   ├── veo/                       # VEO 3.1 MCP Server (PyPI: veo-mcp-server)
+│   │   ├── pyproject.toml
+│   │   ├── requirements.txt
+│   │   └── src/
+│   │       └── veo_mcp_server/
+│   │           ├── __init__.py
+│   │           ├── __main__.py
+│   │           └── server.py
+│   └── nanobanana/                # NanoBanana MCP Server (PyPI: nanobanana-mcp-server)
+│       ├── pyproject.toml
+│       ├── requirements.txt
+│       └── nanobanana_mcp_server/ # Package
 ├── skills/
 │   ├── veo-prompting/             # VEO prompting skill
 │   │   └── SKILL.md
@@ -219,7 +229,6 @@ gemini-media-mcp/
 │               └── SKILL.md
 ├── .claude-plugin/
 │   └── marketplace.json
-├── setup.py                  # Auto-setup script (deps + config)
 ├── .env.example
 ├── .gitignore
 ├── CHANGELOG.md
