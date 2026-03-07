@@ -1,0 +1,48 @@
+# Gemini Media MCP
+
+> All-in-one MCP toolkit for AI media generation -- VEO 3.1 video + Gemini Imagen 3 images + prompting skills
+
+## Overview
+
+Gemini Media MCP is a monorepo containing 2 MCP servers and 2 Claude Code prompting skills for AI media generation using Google's Gemini platform.
+
+## MCP Servers
+
+### VEO 3.1 Server (servers/veo/server.py)
+- 9 tools for AI video generation
+- Text-to-video, image-to-video, video extension, frame interpolation
+- Async job pattern with background processing
+- API key rotation on quota exhaustion
+- 3-layer download fallback (SDK, URI, ACTIVE wait)
+- Supports 720p, 1080p, 4K resolution
+- Supports 4, 6, 8 second durations
+- Seed control and batch generation (1-4 videos)
+
+Tools: veo_generate_video, veo_image_to_video, veo_interpolate_video, veo_extend_video, veo_check_job, veo_list_jobs, veo_api_status, veo_pricing_info, veo_show_output_stats
+
+### NanoBanana Server (servers/nanobanana/)
+- 4 tools for AI image generation
+- Gemini Imagen 3 Pro (maximum quality) and Flash (fast) models
+- Default 4K resolution
+- Reference image support for consistent multi-angle shots
+- Negative prompts, thinking level control, Google Search grounding
+
+Tools: generate_image, upload_file, show_output_stats, maintenance
+
+## Claude Code Skills
+
+### VEO Prompting (skills/veo-prompting/SKILL.md)
+7-layer prompt engineering for cinematic VEO 3.1 videos: Cinematography, Subject, Action, Environment, Lighting & Mood, Audio Design, Technical Controls.
+
+### NanoBanana Prompting (skills/nanobanana-prompting/SKILL.md)
+7-layer prompt engineering for photorealistic Gemini images: Style & Art Direction, Scene Description, Main Subject, Camera & Lens, Lighting, Texture/Material/Color, Negative Prompts.
+
+## Requirements
+
+- Python 3.10+
+- google-genai >= 1.5.0
+- GEMINI_API_KEY environment variable
+
+## Installation
+
+See llms-install.md for detailed installation instructions.

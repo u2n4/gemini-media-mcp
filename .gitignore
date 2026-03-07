@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.log
+.venv/
+venv/
+.DS_Store
+Thumbs.db
+node_modules/
+images/
+videos/
+*.mp4
+*.mp3
+*.wav
+*_thumb.jpeg
+generated-images/
