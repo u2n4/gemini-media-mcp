@@ -1,18 +1,18 @@
 # NanoBanana MCP Server
 
-MCP server for AI image generation using Google Gemini Imagen 3. Supports Pro (maximum quality) and Flash (fast generation) models with default 4K resolution.
+MCP server for AI image generation using NanoBanana Pro 2. Supports Pro (maximum quality) and Flash (fast generation) models with default 4K resolution.
 
 Based on [nanobanana-mcp-server](https://github.com/nano-banana/mcp-server) by zhongwei (MIT License).
 
 ## What It Does
 
-Generates AI images using Google's Gemini Imagen 3 models. Supports text-to-image generation, image editing with reference images, file uploads, and server maintenance. Produces high-quality images at up to 4K resolution.
+Generates AI images using NanoBanana Pro 2 models. Supports text-to-image generation, image editing with reference images, file uploads, and server maintenance. Produces high-quality images at up to 4K resolution.
 
 ## Tools (4)
 
 | Tool | Description |
 |------|-------------|
-| `generate_image` | Generate images using Gemini Imagen 3. Supports model selection (Pro/Flash), aspect ratio, resolution (up to 4K), negative prompts, thinking level, grounding, reference images, and batch generation. |
+| `generate_image` | Generate images using NanoBanana Pro 2. Supports model selection (Pro/Flash), aspect ratio, resolution (up to 4K), negative prompts, thinking level, grounding, reference images, and batch generation. |
 | `upload_file` | Upload a reference image for use in image editing or conditioning. |
 | `show_output_stats` | Display statistics about generated images — count, total size, file details. |
 | `maintenance` | Server maintenance and cleanup — clear caches, remove temporary files, optimize storage. |

@@ -1,6 +1,6 @@
 # Gemini Media MCP
 
-> All-in-one MCP toolkit for AI media generation -- VEO 3.1 video + Gemini Imagen 3 images + prompting skills
+> All-in-one MCP toolkit for AI media generation -- VEO 3.1 video + NanoBanana Pro 2 images + prompting skills
 
 ## Overview
 
@@ -22,7 +22,7 @@ Tools: veo_generate_video, veo_image_to_video, veo_interpolate_video, veo_extend
 
 ### NanoBanana Server (servers/nanobanana/)
 - 4 tools for AI image generation
-- Gemini Imagen 3 Pro (maximum quality) and Flash (fast) models
+- NanoBanana Pro 2 — Pro (maximum quality) and Flash (fast) models
 - Default 4K resolution
 - Reference image support for consistent multi-angle shots
 - Negative prompts, thinking level control, Google Search grounding
@@ -35,7 +35,7 @@ Tools: generate_image, upload_file, show_output_stats, maintenance
 7-layer prompt engineering for cinematic VEO 3.1 videos: Cinematography, Subject, Action, Environment, Lighting & Mood, Audio Design, Technical Controls.
 
 ### NanoBanana Prompting (skills/nanobanana-prompting/SKILL.md)
-7-layer prompt engineering for photorealistic Gemini images: Style & Art Direction, Scene Description, Main Subject, Camera & Lens, Lighting, Texture/Material/Color, Negative Prompts.
+7-layer prompt engineering for photorealistic NanoBanana Pro 2 images: Style & Art Direction, Scene Description, Main Subject, Camera & Lens, Lighting, Texture/Material/Color, Negative Prompts.
 
 ## Requirements
 

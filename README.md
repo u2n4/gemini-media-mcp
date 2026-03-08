@@ -2,7 +2,7 @@
   <img src="assets/banner.png" alt="Gemini Media MCP" width="100%">
 
   <h1>Gemini Media MCP</h1>
-  <p><strong>All-in-one MCP toolkit for AI media generation -- VEO 3.1 video + Gemini Imagen 3 images + prompting skills</strong></p>
+  <p><strong>All-in-one MCP toolkit for AI media generation -- VEO 3.1 video + NanoBanana Pro 2 images + prompting skills</strong></p>
 
   <p>
     <a href="#"><img src="https://img.shields.io/badge/MCP-Compatible-blue?style=for-the-badge" alt="MCP"></a>
@@ -25,7 +25,7 @@
 
 ## What is This?
 
-Gemini Media MCP is a comprehensive toolkit that brings Google's most powerful AI media generation models into any MCP-compatible AI assistant. Generate 4K videos with VEO 3.1, create stunning images with Gemini Imagen 3, and craft professional prompts with built-in skills -- all from a single repository.
+Gemini Media MCP is a comprehensive toolkit that brings Google's most powerful AI media generation models into any MCP-compatible AI assistant. Generate 4K videos with VEO 3.1, create stunning images with NanoBanana Pro 2, and craft professional prompts with built-in skills -- all from a single repository.
 
 ## What's Included
 
@@ -34,14 +34,14 @@ Gemini Media MCP is a comprehensive toolkit that brings Google's most powerful A
 | Server | Description | Tools |
 |--------|-------------|-------|
 | **VEO 3.1** | AI video generation (text-to-video, image-to-video, extend, interpolate) | 9 tools |
-| **NanoBanana** | AI image generation with Gemini Imagen 3 (Pro + Flash models) | 4 tools |
+| **NanoBanana** | AI image generation with NanoBanana Pro 2 (Pro + Flash models) | 4 tools |
 
 ### Claude Code Skills (Plugin Marketplace)
 
 | Skill | Description |
 |-------|-------------|
 | **VEO Prompting** | 7-layer prompt engineering for cinematic VEO 3.1 videos |
-| **NanoBanana Prompting** | 7-layer prompt engineering for photorealistic Gemini images |
+| **NanoBanana Prompting** | 7-layer prompt engineering for photorealistic NanoBanana Pro 2 images |
 
 Install skills via Claude Code:
 ```
@@ -152,13 +152,13 @@ AI video generation powered by Google VEO 3.1. Uses an async job pattern where g
 
 ## NanoBanana Server
 
-AI image generation powered by Google Gemini Imagen 3. Supports Pro (maximum quality) and Flash (fast) models with default 4K resolution.
+AI image generation powered by NanoBanana Pro 2. Supports Pro (maximum quality) and Flash (fast) models with default 4K resolution.
 
 ### Tools
 
 | Tool | Description |
 |------|-------------|
-| `generate_image` | Generate images using Gemini Imagen 3 (Pro or Flash). Supports aspect ratio, resolution (up to 4K), negative prompts, thinking level, grounding, and reference images. |
+| `generate_image` | Generate images using NanoBanana Pro 2 (Pro or Flash). Supports aspect ratio, resolution (up to 4K), negative prompts, thinking level, grounding, and reference images. |
 | `upload_file` | Upload reference image for editing or conditioning. |
 | `show_output_stats` | Display generation statistics -- image count, total size, file details. |
 | `maintenance` | Server maintenance and cleanup -- clear caches, remove temporary files. |
@@ -183,7 +183,7 @@ AI image generation powered by Google Gemini Imagen 3. Supports Pro (maximum qua
 7. Technical Controls (negative prompts, style anchors, film stocks)
 
 ### NanoBanana Prompting Skill
-7-layer prompt engineering system for Gemini Imagen 3:
+7-layer prompt engineering system for NanoBanana Pro 2:
 1. Style & Art Direction (visual DNA)
 2. Scene Description (environment, atmosphere)
 3. Main Subject (hero element with extreme specificity)

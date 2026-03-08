@@ -2,7 +2,7 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "gemini-media-mcp",
   "version": "1.0.0",
-  "description": "All-in-one MCP toolkit for AI media generation -- VEO 3.1 video + Gemini Imagen 3 images + prompting skills",
+  "description": "All-in-one MCP toolkit for AI media generation -- VEO 3.1 video + NanoBanana Pro 2 images + prompting skills",
   "owner": {
     "name": "alihsh0",
     "email": "alihsh0@users.noreply.github.com"
@@ -17,7 +17,7 @@
     },
     {
       "name": "nanobanana-prompting",
-      "description": "Professional NanoBanana Pro (Gemini Imagen 3) image prompt engineering skill",
+      "description": "Professional NanoBanana Pro 2 image prompt engineering skill",
       "version": "1.0.0",
       "source": "./plugins/nanobanana-prompting",
       "category": "development"
