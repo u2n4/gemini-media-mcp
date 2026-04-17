@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nanobanana-mcp-server"
-version = "0.3.4"
+version = "1.1.0"
 description = "MCP server for AI image generation using NanoBanana Pro 2 -- 4K resolution"
 readme = "README.md"
 license = "MIT"
