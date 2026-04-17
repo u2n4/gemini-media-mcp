@@ -1,3 +1,4 @@
+<!-- mcp-name: io.github.u2n4/gemini-media-mcp -->
 <div align="center">
   <img src="assets/banner.png" alt="Gemini Media MCP" width="100%">
 
@@ -50,17 +51,22 @@ Install skills via Claude Code:
 
 ## Quick Start
 
-### Auto-Setup (Recommended)
+This repo hosts **two independent MCP servers**. Install whichever you need — or both. Each server publishes to PyPI separately.
 
-Clone and run the setup script -- it installs dependencies, configures your API key, and adds servers to Claude Desktop automatically:
+### Option A — `uvx` (zero-install, recommended)
+
+Add a block to your MCP client config (Claude Desktop, Claude Code, Cursor, VS Code, Windsurf) using the appropriate server block below (see VEO Server / NanoBanana Server sections).
+
+### Option B — clone + editable install
 
 ```bash
 git clone https://github.com/u2n4/gemini-media-mcp.git
 cd gemini-media-mcp
-python setup.py
-```
 
-The setup script offers a menu to install VEO, NanoBanana, or both.
+# Install one or both sub-packages
+uv pip install -e servers/veo
+uv pip install -e servers/nanobanana
+```
 
 ### VEO Server
 
@@ -255,3 +261,7 @@ MIT -- see [LICENSE](LICENSE).
 ## Support
 
 If you find this useful, please star this repository!
+
+---
+
+Made with ❤️ in the Eastern Province of Saudi Arabia.
