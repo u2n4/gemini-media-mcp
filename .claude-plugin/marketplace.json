@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "description": "All-in-one MCP toolkit for AI media generation -- VEO 3.1 video + Gemini Imagen 3 images + prompting skills",
   "owner": {
-    "name": "alihsh0",
-    "email": "alihsh0@users.noreply.github.com"
+    "name": "u2n4",
+    "email": "u2n4@users.noreply.github.com"
   },
   "plugins": [
     {

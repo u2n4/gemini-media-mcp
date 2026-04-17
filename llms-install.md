@@ -95,7 +95,7 @@ Configure for Claude Desktop:
 ### Install via Plugin Marketplace
 
 ```
-/plugin marketplace add alihsh0/gemini-media-mcp
+/plugin marketplace add u2n4/gemini-media-mcp
 ```
 
 This installs both the VEO Prompting and NanoBanana Prompting skills.
