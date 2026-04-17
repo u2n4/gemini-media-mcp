@@ -45,7 +45,7 @@ Gemini Media MCP is a comprehensive toolkit that brings Google's most powerful A
 
 Install skills via Claude Code:
 ```
-/plugin marketplace add alihsh0/gemini-media-mcp
+/plugin marketplace add u2n4/gemini-media-mcp
 ```
 
 ## Quick Start
@@ -55,7 +55,7 @@ Install skills via Claude Code:
 Clone and run the setup script -- it installs dependencies, configures your API key, and adds servers to Claude Desktop automatically:
 
 ```bash
-git clone https://github.com/alihsh0/gemini-media-mcp.git
+git clone https://github.com/u2n4/gemini-media-mcp.git
 cd gemini-media-mcp
 python setup.py
 ```
