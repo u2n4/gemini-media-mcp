@@ -22,22 +22,19 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install ${{ matrix.server }} server
+      - name: Lint with ruff (hard gate)
         working-directory: servers/${{ matrix.server }}
-        run: uv pip install -e .
+        # `uv run --with X` creates an ephemeral venv with the project's
+        # dependencies plus the named tool, so imports resolve correctly.
+        run: uv run --with ruff ruff check .
 
-      - name: Lint with ruff
+      - name: Type check with pyright (soft — pre-existing errors, not a launch blocker)
         working-directory: servers/${{ matrix.server }}
-        run: |
-          uv tool install ruff
-          uv tool run ruff check .
-        continue-on-error: true
-
-      - name: Type check with pyright
-        working-directory: servers/${{ matrix.server }}
-        run: |
-          uv tool install pyright
-          uv tool run pyright . || true
+        # NOTE: there are pre-existing pyright errors in both sub-packages
+        # (4 in veo, 61 in nanobanana) that are out of scope for the
+        # launch-prep CI fix. Switch to a hard gate after a dedicated
+        # cleanup PR. The check still runs so we see new errors.
+        run: uv run --with pyright pyright . || true
         continue-on-error: true
 
       - name: Build wheel + sdist

@@ -63,6 +63,11 @@ Add a block to your MCP client config (Claude Desktop, Claude Code, Cursor, VS C
 git clone https://github.com/u2n4/gemini-media-mcp.git
 cd gemini-media-mcp
 
+# Create a virtual environment (uv pip install requires one — or pass --system)
+uv venv
+source .venv/bin/activate     # macOS / Linux
+# .venv\Scripts\activate     # Windows PowerShell
+
 # Install one or both sub-packages
 uv pip install -e servers/veo
 uv pip install -e servers/nanobanana
