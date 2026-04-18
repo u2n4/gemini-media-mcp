@@ -2,6 +2,36 @@
 
 Professional-grade MCP server for Google VEO 3.1 video generation with async job pattern, API key rotation, and multi-fallback download.
 
+## Quick Install
+
+```bash
+pip install veo-mcp-server
+# or
+uvx veo-mcp-server --help
+```
+
+**Claude Desktop (`claude_desktop_config.json`):**
+
+```json
+{
+  "mcpServers": {
+    "veo": {
+      "command": "uvx",
+      "args": ["veo-mcp-server"],
+      "env": {
+        "GEMINI_API_KEY": "your_key_here"
+      }
+    }
+  }
+}
+```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GEMINI_API_KEY` | Gemini API key — required for all generation | -- |
+| `GEMINI_API_KEY_BACKUP` | Backup key for automatic rotation on 429 | -- |
+| `VIDEO_OUTPUT_DIR` | Directory where generated videos are saved | `~/veo-videos` |
+
 ## What It Does
 
 Generates AI videos using Google's VEO 3.1 model. Supports text-to-video, image-to-video, video extension, and frame interpolation. Uses an async job pattern where generation starts immediately in the background and returns a job ID for polling.
@@ -27,23 +57,6 @@ Generates AI videos using Google's VEO 3.1 model. Supports text-to-video, image-
 | `GEMINI_API_KEY` | Primary Gemini API key (required) | -- |
 | `GEMINI_API_KEY_BACKUP` | Backup key for automatic rotation on 429 | -- |
 | `VIDEO_OUTPUT_DIR` | Directory where generated videos are saved | `~/veo-videos` |
-
-## Claude Desktop Configuration
-
-```json
-{
-  "mcpServers": {
-    "veo": {
-      "command": "python",
-      "args": ["path/to/gemini-media-mcp/servers/veo/server.py"],
-      "env": {
-        "GEMINI_API_KEY": "your_key_here",
-        "VIDEO_OUTPUT_DIR": "./videos"
-      }
-    }
-  }
-}
-```
 
 ## Architecture
 
