@@ -20,6 +20,9 @@ and each sub-package (`servers/veo`, `servers/nanobanana`) follows [Semantic Ver
 - GitHub username migrated from `alihsh0` to `u2n4` across all URLs, author metadata, plugin manifests, and clone commands
 - Sub-package versions synchronized for this launch (VEO `1.0.0` → `1.1.0`, NanoBanana `0.3.4` → `1.1.0`)
 - Removed dead reference to `setup.py` in README — replaced with uvx-first install instructions
+- Incorporated upstream rebrand from `71986a6`: Gemini Imagen 3 → NanoBanana Pro 2 marketing name across description strings, README, llms.txt, marketplace.json, plugin.json
+- NanoBanana PyPI distribution renamed `nanobanana-mcp-server` → `nanobanana-imagen-mcp` (the original slot was occupied by an unrelated package on PyPI); module name `nanobanana_mcp_server` is unchanged
+- Removed broken upstream attribution to `https://github.com/nano-banana/mcp-server` (404); replaced with neutral "inspired by the nano-banana naming convention" note
 
 ### Fixed
 - README "Auto-Setup" instructions referenced a `setup.py` file that did not exist in the repository
