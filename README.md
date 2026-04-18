@@ -104,7 +104,7 @@ pip install veo-mcp-server
   "mcpServers": {
     "nanobanana": {
       "command": "uvx",
-      "args": ["nanobanana-mcp-server"],
+      "args": ["nanobanana-imagen-mcp"],
       "env": {
         "GEMINI_API_KEY": "your_key"
       }
@@ -115,12 +115,12 @@ pip install veo-mcp-server
 
 **Claude Code:**
 ```bash
-claude mcp add nanobanana -s user -e GEMINI_API_KEY=your_key -- uvx nanobanana-mcp-server
+claude mcp add nanobanana -s user -e GEMINI_API_KEY=your_key -- uvx nanobanana-imagen-mcp
 ```
 
 **pip install:**
 ```bash
-pip install nanobanana-mcp-server
+pip install nanobanana-imagen-mcp
 ```
 
 ## VEO Server
@@ -211,7 +211,7 @@ gemini-media-mcp/
 │   │           ├── __init__.py
 │   │           ├── __main__.py
 │   │           └── server.py
-│   └── nanobanana/                # NanoBanana MCP Server (PyPI: nanobanana-mcp-server)
+│   └── nanobanana/                # NanoBanana MCP Server (PyPI: nanobanana-imagen-mcp)
 │       ├── pyproject.toml
 │       ├── requirements.txt
 │       └── nanobanana_mcp_server/ # Package
@@ -255,7 +255,7 @@ MIT -- see [LICENSE](LICENSE).
 
 ## Credits
 
-- NanoBanana MCP Server based on [nanobanana-mcp-server](https://github.com/nano-banana/mcp-server) by zhongwei (MIT License)
+- NanoBanana MCP Server: inspired by the nano-banana naming convention used across the MCP community. This is an independent implementation.
 - VEO 3.1 by Google DeepMind
 
 ## Support
