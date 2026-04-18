@@ -156,3 +156,45 @@ def test_no_home_pollution(tmp_path):
     assert not nano_images.exists(), (
         f"Import created {nano_images} — eager mkdir must not run at import time"
     )
+
+
+def test_nanobanana_db_path_memory_no_filesystem(tmp_path, monkeypatch):
+    """AC4(b): NANOBANANA_DB_PATH=:memory: must not touch the filesystem at all."""
+    monkeypatch.setenv("NANOBANANA_DB_PATH", ":memory:")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+
+    from nanobanana_mcp_server.services.image_database_service import ImageDatabaseService
+
+    svc = ImageDatabaseService()
+    # Trigger full initialization — schema creation must stay in-memory
+    svc._ensure_initialized()
+
+    # No directories should be created under the fake home
+    assert not (tmp_path / "nanobanana-images").exists(), (
+        "NANOBANANA_DB_PATH=:memory: must not create ~/nanobanana-images"
+    )
+    assert not (tmp_path / "output").exists(), (
+        "NANOBANANA_DB_PATH=:memory: must not create ./output"
+    )
+
+
+def test_nanobanana_db_path_default_uses_home(tmp_path, monkeypatch):
+    """AC4(b): NANOBANANA_DB_PATH unset → default to ~/nanobanana-images/images.db (NOT ./output/)."""
+    monkeypatch.delenv("NANOBANANA_DB_PATH", raising=False)
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+
+    from nanobanana_mcp_server.services.image_database_service import _resolve_db_path
+
+    resolved = _resolve_db_path(None)
+    # Must reference nanobanana-images inside the user's home, not relative ./output/
+    assert "nanobanana-images" in resolved, (
+        f"Expected 'nanobanana-images' in resolved path, got: {resolved!r}"
+    )
+    assert resolved.endswith("images.db"), (
+        f"Expected path to end with 'images.db', got: {resolved!r}"
+    )
+    assert "output" not in resolved or "nanobanana" in resolved, (
+        f"Default path must not be relative ./output/images.db, got: {resolved!r}"
+    )
