@@ -45,7 +45,7 @@ class ServerConfig:
     """Server configuration settings."""
 
     gemini_api_key: str | None = None
-    server_name: str = "nanobanana-mcp-server"
+    server_name: str = "nanobanana-imagen-mcp"
     transport: str = "stdio"  # stdio or http
     host: str = "127.0.0.1"
     port: int = 9000

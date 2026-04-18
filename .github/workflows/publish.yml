@@ -4,7 +4,7 @@
 #   1. Publish v1.1.0 manually once for EACH sub-package via `cd servers/<name> && uv publish`.
 #   2. For EACH PyPI project:
 #        https://pypi.org/manage/project/veo-mcp-server/settings/publishing/
-#        https://pypi.org/manage/project/nanobanana-mcp-server/settings/publishing/
+#        https://pypi.org/manage/project/nanobanana-imagen-mcp/settings/publishing/
 #      Add a Trusted Publisher:
 #        - Publisher: GitHub
 #        - Owner: u2n4
@@ -14,7 +14,7 @@
 #   3. In this repo, create Settings -> Environments -> "pypi".
 #   4. Uncomment the blocks below and push a tag:
 #        - tag `veo-v*.*.*`        -> publishes servers/veo
-#        - tag `nanobanana-v*.*.*` -> publishes servers/nanobanana
+#        - tag `nanobanana-imagen-v*.*.*` -> publishes servers/nanobanana
 
 name: Publish to PyPI
 
@@ -22,7 +22,7 @@ on:
   push:
     tags:
       - "veo-v*.*.*"
-      - "nanobanana-v*.*.*"
+      - "nanobanana-imagen-v*.*.*"
 
 jobs:
   # publish-veo:
@@ -43,7 +43,7 @@ jobs:
   #       run: uv publish
   #
   # publish-nanobanana:
-  #   if: startsWith(github.ref, 'refs/tags/nanobanana-v')
+  #   if: startsWith(github.ref, 'refs/tags/nanobanana-imagen-v')
   #   runs-on: ubuntu-latest
   #   environment: pypi
   #   permissions:

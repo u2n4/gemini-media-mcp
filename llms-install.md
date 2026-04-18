@@ -49,7 +49,7 @@ export VIDEO_OUTPUT_DIR=./videos
 ### Option A: Install from pip (recommended)
 
 ```bash
-pip install nanobanana-mcp-server
+pip install nanobanana-imagen-mcp
 ```
 
 Configure for Claude Desktop:
