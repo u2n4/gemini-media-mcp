@@ -198,3 +198,38 @@ def test_nanobanana_db_path_default_uses_home(tmp_path, monkeypatch):
     assert "output" not in resolved or "nanobanana" in resolved, (
         f"Default path must not be relative ./output/images.db, got: {resolved!r}"
     )
+
+
+def test_initialize_services_honors_db_path_env_var(tmp_path, monkeypatch):
+    """AC4(b) wiring regression: services.initialize_services() must NOT pass an explicit
+    db_path that short-circuits NANOBANANA_DB_PATH env var resolution.
+
+    Prior bug: services/__init__.py passed db_path=os.path.join(out_dir, "images.db"),
+    which bypassed _resolve_db_path() entirely. Users setting NANOBANANA_DB_PATH=:memory:
+    per the README would silently get disk-backed storage anyway.
+    """
+    monkeypatch.setenv("NANOBANANA_DB_PATH", ":memory:")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-dummy-key")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+
+    # Force re-import so module-level globals pick up the fresh env
+    import importlib
+    import nanobanana_mcp_server.services as services_pkg
+    importlib.reload(services_pkg)
+
+    from nanobanana_mcp_server.config.settings import ServerConfig, GeminiConfig
+    server_config = ServerConfig.from_env()
+    gemini_config = GeminiConfig()
+    services_pkg.initialize_services(server_config, gemini_config)
+
+    db_service = services_pkg.get_image_database_service()
+    assert db_service.db_path == ":memory:", (
+        f"NANOBANANA_DB_PATH=:memory: must propagate through initialize_services(). "
+        f"Got db_path={db_service.db_path!r}"
+    )
+    assert db_service._is_memory is True, (
+        "initialize_services() must honor :memory: mode from env var"
+    )
+    # No disk artifacts should exist under the fake home
+    assert not (tmp_path / "nanobanana-images").exists()
