@@ -281,7 +281,7 @@ class MaintenanceService:
             # 4. Database hygiene
             results["database_hygiene"] = self.database_hygiene(dry_run=dry_run)
 
-            self.logger.info(f"Full maintenance cycle complete")
+            self.logger.info("Full maintenance cycle complete")
             return results
 
         except Exception as e:

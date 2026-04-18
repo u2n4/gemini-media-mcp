@@ -1,7 +1,6 @@
 """Service registry for dependency injection."""
 
 import os
-from typing import Optional
 
 from ..config.settings import (
     FlashImageConfig,
