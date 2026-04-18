@@ -6,6 +6,8 @@
   <p><strong>All-in-one MCP toolkit for AI media generation -- VEO 3.1 video + NanoBanana Pro 2 images + prompting skills</strong></p>
 
   <p>
+    <a href="https://pypi.org/project/veo-mcp-server/"><img src="https://img.shields.io/pypi/v/veo-mcp-server?style=for-the-badge&logo=pypi&logoColor=white&label=veo" alt="PyPI veo-mcp-server"></a>
+    <a href="https://pypi.org/project/nanobanana-imagen-mcp/"><img src="https://img.shields.io/pypi/v/nanobanana-imagen-mcp?style=for-the-badge&logo=pypi&logoColor=white&label=nanobanana" alt="PyPI nanobanana-imagen-mcp"></a>
     <a href="#"><img src="https://img.shields.io/badge/MCP-Compatible-blue?style=for-the-badge" alt="MCP"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT"></a>
     <a href="#"><img src="https://img.shields.io/badge/Claude_Code-Plugin-purple?style=for-the-badge" alt="Claude Code"></a>
