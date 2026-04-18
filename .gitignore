@@ -1,20 +1,46 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
-.env
-*.log
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.pyright/
+.mypy_cache/
+.tox/
+.coverage
+htmlcov/
+
+# Build
+dist/
+build/
+*.whl
+
+# Virtual envs
 .venv/
+.venv-*/
 venv/
-.DS_Store
-Thumbs.db
-node_modules/
+env/
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+
+# Media (generated)
 images/
 videos/
+generated-images/
 *.mp4
 *.mp3
 *.wav
 *_thumb.jpeg
-generated-images/
-dist/
-*.egg-info/
-build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node / misc
+node_modules/

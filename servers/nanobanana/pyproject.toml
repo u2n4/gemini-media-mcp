@@ -3,14 +3,14 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "nanobanana-mcp-server"
-version = "0.3.4"
+name = "nanobanana-imagen-mcp"
+version = "1.1.0"
 description = "MCP server for AI image generation using NanoBanana Pro 2 -- 4K resolution"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
-    { name = "alihsh0" },
+    { name = "u2n4" },
 ]
 keywords = [
     "mcp", "model-context-protocol", "claude", "gemini", "imagen",
@@ -31,11 +31,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/alihsh0/gemini-media-mcp"
-Repository = "https://github.com/alihsh0/gemini-media-mcp"
+Homepage = "https://github.com/u2n4/gemini-media-mcp"
+Repository = "https://github.com/u2n4/gemini-media-mcp"
 
 [project.scripts]
-nanobanana-mcp-server = "nanobanana_mcp_server:main"
+nanobanana-imagen-mcp = "nanobanana_mcp_server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["nanobanana_mcp_server"]

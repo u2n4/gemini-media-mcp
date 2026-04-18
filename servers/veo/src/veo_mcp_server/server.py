@@ -482,7 +482,6 @@ def _run_generation_job(job_id: str, generate_fn, output_file: Path):
         # Step 4: Store video URI(s) and object(s) for extension support
         try:
             for vidx, gen_video in enumerate(operation.response.generated_videos):
-                vid_job_key = job_id if vidx == 0 else f"{job_id}_v{vidx + 1}"
                 uri = getattr(gen_video.video, 'uri', None)
                 if vidx == 0:
                     job["video_uri"] = uri

@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "veo-mcp-server"
-version = "1.0.0"
+version = "1.1.0"
 description = "MCP server for 4K video generation using Google VEO 3.1 -- text-to-video, image-to-video, video extension"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
-    { name = "alihsh0" },
+    { name = "u2n4" },
 ]
 keywords = [
     "mcp", "model-context-protocol", "claude", "veo", "gemini",
@@ -35,8 +35,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/alihsh0/gemini-media-mcp"
-Repository = "https://github.com/alihsh0/gemini-media-mcp"
+Homepage = "https://github.com/u2n4/gemini-media-mcp"
+Repository = "https://github.com/u2n4/gemini-media-mcp"
 
 [project.scripts]
 veo-mcp-server = "veo_mcp_server:main"
