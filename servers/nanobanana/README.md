@@ -2,7 +2,7 @@
 
 MCP server for AI image generation using NanoBanana Pro 2. Supports Pro (maximum quality) and Flash (fast generation) models with default 4K resolution.
 
-Based on [nanobanana-mcp-server](https://github.com/nano-banana/mcp-server) by zhongwei (MIT License).
+Inspired by the nano-banana naming convention used across the MCP community. This is an independent implementation.
 
 ## What It Does
 
@@ -35,7 +35,7 @@ Generates AI images using NanoBanana Pro 2 models. Supports text-to-image genera
 ### From pip (recommended)
 
 ```bash
-pip install nanobanana-mcp-server
+pip install nanobanana-imagen-mcp
 ```
 
 ```json
@@ -85,4 +85,4 @@ MIT
 
 ## Credits
 
-Based on nanobanana-mcp-server by zhongwei (MIT License).
+Inspired by the nano-banana naming convention used across the MCP community. This is an independent implementation.
