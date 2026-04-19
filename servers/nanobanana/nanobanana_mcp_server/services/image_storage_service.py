@@ -63,8 +63,8 @@ class ImageStorageService:
 
     def _ensure_dirs(self) -> None:
         """Lazily create storage directories on first use."""
-        self.base_dir.mkdir(exist_ok=True)
-        self.thumbnails_dir.mkdir(exist_ok=True)
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+        self.thumbnails_dir.mkdir(parents=True, exist_ok=True)
 
     def _setup_directories(self) -> None:
         """Create necessary directories (alias kept for compatibility)."""
