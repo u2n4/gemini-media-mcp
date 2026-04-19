@@ -98,9 +98,8 @@ class ServerConfig:
             # Default to ~/nanobanana-images in user's home directory for better compatibility
             output_dir = str(Path.home() / "nanobanana-images")
 
-        # Convert to absolute path and ensure it exists
+        # Convert to absolute path (mkdir deferred to first actual write)
         output_path = Path(output_dir).resolve()
-        output_path.mkdir(parents=True, exist_ok=True)
 
         return cls(
             gemini_api_key=api_key,

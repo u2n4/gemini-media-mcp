@@ -61,9 +61,6 @@ class EnhancedImageService:
         self.out_dir = out_dir or "output"
         self.logger = logging.getLogger(__name__)
 
-        # Ensure output directory exists
-        os.makedirs(self.out_dir, exist_ok=True)
-
     def generate_images(
         self,
         prompt: str,

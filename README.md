@@ -26,6 +26,13 @@
 
 ---
 
+| CLI | Install check | Version check |
+|-----|---------------|---------------|
+| `veo-mcp-server` | `veo-mcp-server --help` | `veo-mcp-server --version` |
+| `nanobanana-imagen-mcp` | `nanobanana-imagen-mcp --help` | `nanobanana-imagen-mcp --version` |
+
+---
+
 ## What is This?
 
 Gemini Media MCP is a comprehensive toolkit that brings Google's most powerful AI media generation models into any MCP-compatible AI assistant. Generate 4K videos with VEO 3.1, create stunning images with NanoBanana Pro 2, and craft professional prompts with built-in skills -- all from a single repository.

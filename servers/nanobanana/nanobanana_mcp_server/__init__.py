@@ -4,7 +4,15 @@ Nano Banana MCP Server - AI-powered image generation and editing via Nano Banana
 A production-ready Model Context Protocol server built with FastMCP.
 """
 
-__version__ = "0.3.4"
+try:
+    from importlib.metadata import version, PackageNotFoundError
+    try:
+        __version__ = version("nanobanana-imagen-mcp")
+    except PackageNotFoundError:
+        __version__ = "0.0.0+local"
+except ImportError:
+    __version__ = "0.0.0+local"
+
 __author__ = "Nano Banana Team"
 __email__ = "team@nanobanana.dev"
 __description__ = (
