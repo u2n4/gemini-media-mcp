@@ -55,19 +55,20 @@ class ImageStorageService:
         self.thumbnail_quality = 85
         self.max_thumbnail_bytes = 50 * 1024  # 50KB
 
-        # Ensure directories exist
-        self._setup_directories()
-
-        # Load existing metadata
+        # Load existing metadata (deferred: dirs created on first use via _ensure_dirs)
         self.image_registry: Dict[str, StoredImageInfo] = self._load_registry()
 
         # Cleanup on init
         self._cleanup_expired()
 
+    def _ensure_dirs(self) -> None:
+        """Lazily create storage directories on first use."""
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+        self.thumbnails_dir.mkdir(parents=True, exist_ok=True)
+
     def _setup_directories(self) -> None:
-        """Create necessary directories."""
-        self.base_dir.mkdir(exist_ok=True)
-        self.thumbnails_dir.mkdir(exist_ok=True)
+        """Create necessary directories (alias kept for compatibility)."""
+        self._ensure_dirs()
 
     def _load_registry(self) -> Dict[str, StoredImageInfo]:
         """Load image registry from disk."""
@@ -180,6 +181,8 @@ class ImageStorageService:
         Returns:
             StoredImageInfo with paths and metadata
         """
+        self._ensure_dirs()
+
         # Generate unique ID
         image_id = str(uuid.uuid4())
 

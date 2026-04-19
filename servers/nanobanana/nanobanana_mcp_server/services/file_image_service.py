@@ -35,10 +35,11 @@ class FileImageService:
         self.thumbnail_quality = 85
         self.max_thumbnail_bytes = 50 * 1024  # 50KB max
 
-        # Ensure output directory exists
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-
         self.logger.info(f"FileImageService initialized with output directory: {self.output_dir}")
+
+    def _ensure_output_dir(self) -> None:
+        """Lazily create the output directory on first use."""
+        self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def _generate_filename(self, extension: str = "png", counter: int = 1) -> str:
         """Generate timestamp-based filename."""
@@ -47,6 +48,7 @@ class FileImageService:
 
     def _get_next_filename(self, extension: str = "png") -> str:
         """Get the next available filename with counter."""
+        self._ensure_output_dir()
         counter = 1
         while True:
             filename = self._generate_filename(extension, counter)

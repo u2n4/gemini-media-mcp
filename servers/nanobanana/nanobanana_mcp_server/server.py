@@ -6,6 +6,7 @@ A production-ready FastMCP server that provides AI-powered image generation and 
 capabilities through Google's Nano Banana 2 (Gemini 3.1 Flash Image) and Gemini 3 Pro Image models.
 """
 
+import argparse
 import sys
 import os
 from .config.settings import ServerConfig, GeminiConfig
@@ -103,6 +104,21 @@ def create_wrapper_app() -> NanoBananaMCP:
 
 def main():
     """Main entry point for the server."""
+    from . import __version__
+
+    parser = argparse.ArgumentParser(
+        prog="nanobanana-imagen-mcp",
+        description="NanoBanana MCP Server — 4K AI image generation via Gemini",
+        add_help=True,
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+    )
+    # parse_known_args so FastMCP transport args pass through unchanged
+    _known, _remaining = parser.parse_known_args()
+
     # Set up logging first
     log_level = os.getenv("LOG_LEVEL", "INFO")
     log_format = os.getenv("LOG_FORMAT", "standard")  # standard, json, detailed

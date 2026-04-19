@@ -4,6 +4,36 @@ MCP server for AI image generation using NanoBanana Pro 2. Supports Pro (maximum
 
 Inspired by the nano-banana naming convention used across the MCP community. This is an independent implementation.
 
+## Quick Install
+
+```bash
+pip install nanobanana-imagen-mcp
+# or
+uvx nanobanana-imagen-mcp --help
+```
+
+**Claude Desktop (`claude_desktop_config.json`):**
+
+```json
+{
+  "mcpServers": {
+    "nanobanana": {
+      "command": "uvx",
+      "args": ["nanobanana-imagen-mcp"],
+      "env": {
+        "GEMINI_API_KEY": "your_key_here"
+      }
+    }
+  }
+}
+```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GEMINI_API_KEY` | Gemini API key — required for all generation | -- |
+| `IMAGE_OUTPUT_DIR` | Directory where generated images are saved | `~/nanobanana-images` |
+| `NANOBANANA_DB_PATH` | SQLite database path for image metadata | `~/nanobanana-images/images.db` |
+
 ## What It Does
 
 Generates AI images using NanoBanana Pro 2 models. Supports text-to-image generation, image editing with reference images, file uploads, and server maintenance. Produces high-quality images at up to 4K resolution.
@@ -29,6 +59,19 @@ Generates AI images using NanoBanana Pro 2 models. Supports text-to-image genera
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `GEMINI_API_KEY` | Gemini API key (required) | -- |
+| `IMAGE_OUTPUT_DIR` | Output directory for generated images | `~/nanobanana-images` |
+
+## Storage
+
+Generated image metadata is tracked in a SQLite database.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NANOBANANA_DB_PATH` | Path to the SQLite metadata database | `~/nanobanana-images/images.db` |
+
+**Opt out of persistent storage** by setting `NANOBANANA_DB_PATH=:memory:`. This uses an in-memory database that is discarded when the server exits — useful for ephemeral or read-only environments. Trade-off: image history is lost on restart; the `show_output_stats` tool will show an empty database each session.
+
+The database and output directories are created lazily on first image generation — starting the server with no `GEMINI_API_KEY` set (e.g. `nanobanana-imagen-mcp --help`) does not create any files or directories.
 
 ## Claude Desktop Configuration
 
@@ -42,8 +85,8 @@ pip install nanobanana-imagen-mcp
 {
   "mcpServers": {
     "nanobanana": {
-      "command": "python",
-      "args": ["-m", "nanobanana_mcp_server.server"],
+      "command": "uvx",
+      "args": ["nanobanana-imagen-mcp"],
       "env": {
         "GEMINI_API_KEY": "your_key_here"
       }

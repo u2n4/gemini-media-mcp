@@ -11,6 +11,7 @@ Architecture:
 
 from __future__ import annotations
 
+import argparse
 import os
 import sys
 import time
@@ -46,15 +47,6 @@ VIDEO_OUTPUT_DIR: str = os.environ.get(
     "VIDEO_OUTPUT_DIR",
     str(Path.home() / "veo-videos"),
 )
-
-if not API_KEYS:
-    log.error("No GEMINI_API_KEY environment variables set!")
-    sys.exit(1)
-
-OUTPUT_PATH = Path(VIDEO_OUTPUT_DIR).resolve()
-OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
-log.info("Video output directory: %s", OUTPUT_PATH)
-
 
 # ── API Key Rotation Manager ────────────────────────────────────────────────
 
@@ -101,7 +93,38 @@ class VEOClientManager:
         )
 
 
-manager = VEOClientManager(API_KEYS)
+_manager: Optional[VEOClientManager] = None
+_manager_lock = threading.Lock()
+
+_output_path: Optional[Path] = None
+_output_path_lock = threading.Lock()
+
+
+def _get_manager() -> VEOClientManager:
+    """Lazy accessor for the VEO client manager (thread-safe double-checked locking)."""
+    global _manager
+    if _manager is None:
+        with _manager_lock:
+            if _manager is None:
+                if not API_KEYS:
+                    log.error("No GEMINI_API_KEY environment variables set!")
+                    sys.exit(1)
+                _manager = VEOClientManager(API_KEYS)
+    return _manager
+
+
+def _get_output_path() -> Path:
+    """Lazy accessor for the video output directory (thread-safe double-checked locking)."""
+    global _output_path
+    if _output_path is None:
+        with _output_path_lock:
+            if _output_path is None:
+                p = Path(VIDEO_OUTPUT_DIR).resolve()
+                p.mkdir(parents=True, exist_ok=True)
+                log.info("Video output directory: %s", p)
+                _output_path = p
+    return _output_path
+
 
 # ── MCP Server ───────────────────────────────────────────────────────────────
 mcp = FastMCP("veo_mcp")
@@ -142,7 +165,7 @@ def _resolve_output(output_path: str | None, prefix: str = "veo") -> Path:
             p = p.with_suffix(".mp4")
         p.parent.mkdir(parents=True, exist_ok=True)
         return p
-    return OUTPUT_PATH / f"{prefix}_{_ts()}.mp4"
+    return _get_output_path() / f"{prefix}_{_ts()}.mp4"
 
 
 def _get_model(model_tier: str) -> str:
@@ -234,12 +257,12 @@ def _call_with_rotation(fn):
     except Exception as exc:
         err = str(exc)
         if "429" in err or "RESOURCE_EXHAUSTED" in err or "rate limit" in err.lower():
-            log.warning("Key #%d quota exhausted, attempting rotation...", manager.current_index + 1)
-            if manager.rotate():
-                log.info("Retrying with key #%d...", manager.current_index + 1)
+            log.warning("Key #%d quota exhausted, attempting rotation...", _get_manager().current_index + 1)
+            if _get_manager().rotate():
+                log.info("Retrying with key #%d...", _get_manager().current_index + 1)
                 return fn()
             raise RuntimeError(
-                f"All {len(manager.clients)} API key(s) exhausted! "
+                f"All {len(_get_manager().clients)} API key(s) exhausted! "
                 "VEO quota resets at midnight Pacific time (08:00 UTC)."
             ) from exc
         raise
@@ -253,7 +276,7 @@ def _poll_operation(operation):
     while not operation.done:
         time.sleep(POLL_INTERVAL)
         elapsed += POLL_INTERVAL
-        operation = manager.client.operations.get(operation)
+        operation = _get_manager().client.operations.get(operation)
         log.info("  Still generating... (%ds elapsed)", elapsed)
     log.info("Generation complete after ~%ds", elapsed)
     return operation
@@ -270,7 +293,7 @@ def _cleanup_old_files():
             base = "https://generativelanguage.googleapis.com/v1beta"
             deleted = 0
             for _ in range(10):  # Max 10 files per cleanup
-                resp = http.get(f"{base}/files", params={"key": manager.api_key, "pageSize": 1})
+                resp = http.get(f"{base}/files", params={"key": _get_manager().api_key, "pageSize": 1})
                 if resp.status_code != 200:
                     break
                 files = resp.json().get("files", [])
@@ -280,7 +303,7 @@ def _cleanup_old_files():
                     name = f.get("name", "")
                     state = f.get("state", "")
                     if state == "PROCESSING":
-                        dr = http.delete(f"{base}/{name}", params={"key": manager.api_key})
+                        dr = http.delete(f"{base}/{name}", params={"key": _get_manager().api_key})
                         if dr.status_code == 200:
                             deleted += 1
                             log.info("Cleaned up stuck file: %s", name)
@@ -301,7 +324,7 @@ def _download_via_uri(video_file, output_file: Path) -> bool:
     try:
         with httpx.Client(timeout=120.0, follow_redirects=True) as http:
             # Try with API key in query param (confirmed workaround for project mismatch)
-            download_url = f"{uri}&key={manager.api_key}" if "?" in uri else f"{uri}?key={manager.api_key}"
+            download_url = f"{uri}&key={_get_manager().api_key}" if "?" in uri else f"{uri}?key={_get_manager().api_key}"
             resp = http.get(download_url)
             if resp.status_code == 200 and len(resp.content) > 10000:
                 output_file.write_bytes(resp.content)
@@ -309,7 +332,7 @@ def _download_via_uri(video_file, output_file: Path) -> bool:
                 return True
 
             # Try with API key in header
-            resp = http.get(uri, headers={"x-goog-api-key": manager.api_key})
+            resp = http.get(uri, headers={"x-goog-api-key": _get_manager().api_key})
             if resp.status_code == 200 and len(resp.content) > 10000:
                 output_file.write_bytes(resp.content)
                 log.info("URI+header download succeeded: %d bytes", len(resp.content))
@@ -337,7 +360,7 @@ def _wait_for_active_and_download(video_file, output_file: Path, max_wait: int =
         with httpx.Client(timeout=30.0, follow_redirects=True) as http:
             start = time.time()
             while time.time() - start < max_wait:
-                resp = http.get(f"{base}/{file_name}", params={"key": manager.api_key})
+                resp = http.get(f"{base}/{file_name}", params={"key": _get_manager().api_key})
                 if resp.status_code == 200:
                     info = resp.json()
                     state = info.get("state", "?")
@@ -347,14 +370,14 @@ def _wait_for_active_and_download(video_file, output_file: Path, max_wait: int =
                     if state == "ACTIVE":
                         dl_uri = info.get("downloadUri", "")
                         if dl_uri:
-                            r = http.get(dl_uri, headers={"x-goog-api-key": manager.api_key})
+                            r = http.get(dl_uri, headers={"x-goog-api-key": _get_manager().api_key})
                             if r.status_code == 200 and len(r.content) > 10000:
                                 output_file.write_bytes(r.content)
                                 log.info("Downloaded via ACTIVE downloadUri: %d bytes", len(r.content))
                                 return True
                         # Constructed URL
                         url = f"{base}/{file_name}:download?alt=media"
-                        r = http.get(url, headers={"x-goog-api-key": manager.api_key})
+                        r = http.get(url, headers={"x-goog-api-key": _get_manager().api_key})
                         if r.status_code == 200 and len(r.content) > 10000:
                             output_file.write_bytes(r.content)
                             log.info("Downloaded via ACTIVE constructed URL: %d bytes", len(r.content))
@@ -393,7 +416,7 @@ def _save_video(operation, output_file: Path) -> list[str]:
         for attempt in range(1, DOWNLOAD_MAX_RETRIES + 1):
             try:
                 log.info("SDK download attempt %d/%d for video %d...", attempt, DOWNLOAD_MAX_RETRIES, idx + 1)
-                manager.client.files.download(file=video_file)
+                _get_manager().client.files.download(file=video_file)
                 video_file.save(str(target))
                 if target.exists() and target.stat().st_size > 0:
                     size_mb = target.stat().st_size / (1024 * 1024)
@@ -455,11 +478,11 @@ def _run_generation_job(job_id: str, generate_fn, output_file: Path):
         # Step 1: Call Google API (with automatic key rotation on 429)
         job["status"] = "generating"
         job["message"] = "Sending request to Google VEO API..."
-        job["api_key_num"] = manager.current_index + 1
-        log.info("[Job %s] Starting generation (key #%d)...", job_id[:8], manager.current_index + 1)
+        job["api_key_num"] = _get_manager().current_index + 1
+        log.info("[Job %s] Starting generation (key #%d)...", job_id[:8], _get_manager().current_index + 1)
 
         operation = _call_with_rotation(generate_fn)
-        job["api_key_num"] = manager.current_index + 1  # update if rotated
+        job["api_key_num"] = _get_manager().current_index + 1  # update if rotated
         sys.stderr.flush()
 
         # Step 2: Poll until done
@@ -468,7 +491,7 @@ def _run_generation_job(job_id: str, generate_fn, output_file: Path):
         while not operation.done:
             time.sleep(POLL_INTERVAL)
             elapsed += POLL_INTERVAL
-            operation = manager.client.operations.get(operation)
+            operation = _get_manager().client.operations.get(operation)
             job["message"] = f"Generating... ({elapsed}s elapsed)"
             log.info("[Job %s] Still generating... (%ds)", job_id[:8], elapsed)
 
@@ -592,7 +615,7 @@ def veo_generate_video(
             seed=_seed_for_config(validated_seed),  # NEW: Seed control (Vertex AI only)
             number_of_videos=number_of_videos,  # NEW: Batch generation
         )
-        return manager.client.models.generate_videos(
+        return _get_manager().client.models.generate_videos(
             model=model,
             prompt=prompt,
             config=config,
@@ -766,7 +789,7 @@ def veo_image_to_video(
     def generate_fn():
         # NEW: Load reference images if provided
         ref_images = _load_reference_images(reference_image_paths)
-        return manager.client.models.generate_videos(
+        return _get_manager().client.models.generate_videos(
             model=model,
             prompt=prompt,
             image=image,
@@ -867,7 +890,7 @@ def veo_extend_video(
                 if local_path and Path(local_path).exists():
                     log.info("Uploading local video to get URI reference: %s", local_path)
                     try:
-                        uploaded = manager.client.files.upload(file=local_path)
+                        uploaded = _get_manager().client.files.upload(file=local_path)
                         source_uri = uploaded.uri
                         video_ref = types.Video(uri=source_uri)
                         log.info("Uploaded video, got URI: %s", source_uri[:80] if source_uri else "None")
@@ -919,7 +942,7 @@ def veo_extend_video(
     _video_ref = video_ref
 
     def generate_fn():
-        return manager.client.models.generate_videos(
+        return _get_manager().client.models.generate_videos(
             model=model,
             prompt=prompt,
             video=_video_ref,
@@ -993,7 +1016,7 @@ def veo_interpolate_video(
     }
 
     def generate_fn():
-        return manager.client.models.generate_videos(
+        return _get_manager().client.models.generate_videos(
             model=model,
             prompt=prompt,
             image=first_frame,
@@ -1049,15 +1072,15 @@ def veo_show_output_stats() -> str:
         lines.append("")
 
     # ── Video Files Section ──
-    videos = list(OUTPUT_PATH.glob("*.mp4"))
+    videos = list(_get_output_path().glob("*.mp4"))
     if not videos:
-        lines.append(f"No videos found in {OUTPUT_PATH}")
-        return "\n".join(lines) if lines else f"No videos found in {OUTPUT_PATH}"
+        lines.append(f"No videos found in {_get_output_path()}")
+        return "\n".join(lines) if lines else f"No videos found in {_get_output_path()}"
 
     total_size = sum(v.stat().st_size for v in videos)
     total_mb = total_size / (1024 * 1024)
 
-    lines.append(f"=== Video Output Stats - {OUTPUT_PATH} ===")
+    lines.append(f"=== Video Output Stats - {_get_output_path()} ===")
     lines.append("-" * 60)
     lines.append(f"  Total videos: {len(videos)}")
     lines.append(f"  Total size:   {total_mb:.1f} MB")
@@ -1118,9 +1141,9 @@ def veo_api_status() -> str:
     """
     lines = [
         "=== VEO API Key Status ===",
-        f"  Keys configured: {len(manager.clients)}",
-        f"  Currently using: Key #{manager.current_index + 1}",
-        f"  Keys remaining: {len(manager.clients) - manager.current_index}",
+        f"  Keys configured: {len(_get_manager().clients)}",
+        f"  Currently using: Key #{_get_manager().current_index + 1}",
+        f"  Keys remaining: {len(_get_manager().clients) - _get_manager().current_index}",
         "",
         "Rotation behavior:",
         "  - On 429 (quota exhausted), automatically switches to next key",
@@ -1132,6 +1155,21 @@ def veo_api_status() -> str:
 # ── Entry Point ──────────────────────────────────────────────────────────────
 def main():
     """Entry point for the MCP server."""
+    from . import __version__
+
+    parser = argparse.ArgumentParser(
+        prog="veo-mcp-server",
+        description="VEO 3.1 MCP Server — 4K video generation via Google VEO",
+        add_help=True,
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+    )
+    # parse_known_args so MCP framework args (if any) are forwarded unchanged
+    _known, _remaining = parser.parse_known_args()
+
     log.info("Starting VEO 3.1 MCP Server (async job pattern)...")
     mcp.run()
 
