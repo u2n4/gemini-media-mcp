@@ -1,5 +1,7 @@
 # VEO 3.1 MCP Server
 
+<!-- mcp-name: io.github.u2n4/veo-mcp-server -->
+
 Professional-grade MCP server for Google VEO 3.1 video generation with async job pattern, API key rotation, and multi-fallback download.
 
 ## Quick Install
