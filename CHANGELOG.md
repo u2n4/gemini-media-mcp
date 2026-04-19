@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and each sub-package (`servers/veo`, `servers/nanobanana`) follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-04-18
+
+### Added
+- `<!-- mcp-name: io.github.u2n4/veo-mcp-server -->` and `<!-- mcp-name: io.github.u2n4/nanobanana-imagen-mcp -->` markers in the respective sub-package READMEs to enable MCP Registry ownership verification (the registry checks the PyPI long_description for these markers when a server.json is submitted).
+
 ## [1.1.1] - 2026-04-18
 
 ### Added
