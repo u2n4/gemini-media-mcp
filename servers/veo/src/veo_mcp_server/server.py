@@ -27,6 +27,13 @@ from google import genai
 from google.genai import types
 from mcp.server.fastmcp import FastMCP
 
+from .core.validation import (
+    ValidationError,
+    validate_file_path,
+    validate_output_path,
+    validate_video_uri,
+)
+
 # ── Logging ──────────────────────────────────────────────────────────────────
 handler = logging.StreamHandler(sys.stderr)
 handler.setFormatter(logging.Formatter("[VEO] %(asctime)s %(levelname)s: %(message)s", datefmt="%H:%M:%S"))
@@ -160,9 +167,13 @@ def _ts() -> str:
 
 def _resolve_output(output_path: str | None, prefix: str = "veo") -> Path:
     if output_path:
-        p = Path(output_path)
-        if p.suffix.lower() != ".mp4":
-            p = p.with_suffix(".mp4")
+        # Security: force .mp4 extension BEFORE validation so we validate the
+        # actual path we intend to write.
+        candidate = output_path
+        if Path(candidate).suffix.lower() not in (".mp4", ".mov"):
+            candidate = str(Path(candidate).with_suffix(".mp4"))
+        # Defence-in-depth: validate even though the tool entry already did.
+        p = validate_output_path(candidate)
         p.parent.mkdir(parents=True, exist_ok=True)
         return p
     return _get_output_path() / f"{prefix}_{_ts()}.mp4"
@@ -178,11 +189,11 @@ def _get_model(model_tier: str) -> str:
 def _load_image(image_path: str):
     """Load a local image file as a types.Image for VEO generation.
 
+    Defence-in-depth: every caller validates image_path at tool entry too —
+    this is the second gate that catches any internal code path we miss.
     Uses keyword argument 'location=' as required by SDK v1.63.0+.
     """
-    p = Path(image_path)
-    if not p.exists():
-        raise FileNotFoundError(f"Image not found: {image_path}")
+    p = validate_file_path(image_path)
     return types.Image.from_file(location=str(p))
 
 
@@ -293,7 +304,12 @@ def _cleanup_old_files():
             base = "https://generativelanguage.googleapis.com/v1beta"
             deleted = 0
             for _ in range(10):  # Max 10 files per cleanup
-                resp = http.get(f"{base}/files", params={"key": _get_manager().api_key, "pageSize": 1})
+                # SECURITY: pass API key via header — never in URL (proxy-log leakage).
+                resp = http.get(
+                    f"{base}/files",
+                    params={"pageSize": 1},
+                    headers={"x-goog-api-key": _get_manager().api_key},
+                )
                 if resp.status_code != 200:
                     break
                 files = resp.json().get("files", [])
@@ -303,7 +319,11 @@ def _cleanup_old_files():
                     name = f.get("name", "")
                     state = f.get("state", "")
                     if state == "PROCESSING":
-                        dr = http.delete(f"{base}/{name}", params={"key": _get_manager().api_key})
+                        # SECURITY: pass API key via header — never in URL.
+                        dr = http.delete(
+                            f"{base}/{name}",
+                            headers={"x-goog-api-key": _get_manager().api_key},
+                        )
                         if dr.status_code == 200:
                             deleted += 1
                             log.info("Cleaned up stuck file: %s", name)
@@ -323,19 +343,13 @@ def _download_via_uri(video_file, output_file: Path) -> bool:
     log.info("Fallback download from URI: %s", uri[:80])
     try:
         with httpx.Client(timeout=120.0, follow_redirects=True) as http:
-            # Try with API key in query param (confirmed workaround for project mismatch)
-            download_url = f"{uri}&key={_get_manager().api_key}" if "?" in uri else f"{uri}?key={_get_manager().api_key}"
-            resp = http.get(download_url)
-            if resp.status_code == 200 and len(resp.content) > 10000:
-                output_file.write_bytes(resp.content)
-                log.info("URI+key download succeeded: %d bytes", len(resp.content))
-                return True
-
-            # Try with API key in header
+            # SECURITY: pass API key via `x-goog-api-key` header — never via URL
+            # query string (leaks to proxy logs, TLS-inspection middleboxes,
+            # crash dumps, and browser history).
             resp = http.get(uri, headers={"x-goog-api-key": _get_manager().api_key})
             if resp.status_code == 200 and len(resp.content) > 10000:
                 output_file.write_bytes(resp.content)
-                log.info("URI+header download succeeded: %d bytes", len(resp.content))
+                log.info("URI download succeeded: %d bytes", len(resp.content))
                 return True
 
             log.warning("URI download returned: %d (%d bytes)", resp.status_code, len(resp.content))
@@ -360,7 +374,11 @@ def _wait_for_active_and_download(video_file, output_file: Path, max_wait: int =
         with httpx.Client(timeout=30.0, follow_redirects=True) as http:
             start = time.time()
             while time.time() - start < max_wait:
-                resp = http.get(f"{base}/{file_name}", params={"key": _get_manager().api_key})
+                # SECURITY: pass API key via header — never in URL.
+                resp = http.get(
+                    f"{base}/{file_name}",
+                    headers={"x-goog-api-key": _get_manager().api_key},
+                )
                 if resp.status_code == 200:
                     info = resp.json()
                     state = info.get("state", "?")
@@ -907,8 +925,9 @@ def veo_extend_video(
                 log.info("Using reconstructed Video(uri=...) for extension")
 
     elif video_uri:
-        source_uri = video_uri
-        video_ref = types.Video(uri=video_uri)
+        # Security: SSRF-block non-Gemini / non-TLS / credential-bearing URIs.
+        source_uri = validate_video_uri(video_uri)
+        video_ref = types.Video(uri=source_uri)
         log.info("Using provided video_uri for extension")
     else:
         return (
