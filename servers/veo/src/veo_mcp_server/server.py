@@ -28,7 +28,6 @@ from google.genai import types
 from mcp.server.fastmcp import FastMCP
 
 from .core.validation import (
-    ValidationError,
     validate_file_path,
     validate_output_path,
     validate_video_uri,
