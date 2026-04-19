@@ -17,7 +17,6 @@ import os
 import subprocess
 import sys
 
-import pytest
 
 
 def _base_env(tmp_path) -> dict:
@@ -107,7 +106,7 @@ def test_version_with_dummy_env(tmp_path):
     the version flag still works.
     """
     try:
-        from importlib.metadata import version, PackageNotFoundError
+        from importlib.metadata import version
         pkg_version = version("nanobanana-imagen-mcp")
     except Exception:
         pkg_version = "0.0.0+local"
