@@ -1,5 +1,7 @@
 # NanoBanana MCP Server
 
+<!-- mcp-name: io.github.u2n4/nanobanana-imagen-mcp -->
+
 MCP server for AI image generation using NanoBanana Pro 2. Supports Pro (maximum quality) and Flash (fast generation) models with default 4K resolution.
 
 Inspired by the nano-banana naming convention used across the MCP community. This is an independent implementation.
