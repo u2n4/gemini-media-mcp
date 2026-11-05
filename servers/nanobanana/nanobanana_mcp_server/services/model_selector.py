@@ -177,7 +177,7 @@ class ModelSelector:
             return {
                 "tier": "pro",
                 "name": "Gemini 3 Pro Image",
-                "model_id": "gemini-3-pro-image-preview",
+                "model_id": "gemini-3-pro-image",
                 "max_resolution": "4K (3840px)",
                 "features": [
                     "4K resolution",
@@ -192,7 +192,7 @@ class ModelSelector:
             return {
                 "tier": "flash",
                 "name": "Nano Banana 2 (Gemini 3.1 Flash Image)",
-                "model_id": "gemini-3.1-flash-image-preview",
+                "model_id": "gemini-nano-banana-2.1",
                 "max_resolution": "4K (3840px)",
                 "features": [
                     "Pro-level quality at Flash speed",

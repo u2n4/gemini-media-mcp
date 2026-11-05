@@ -35,7 +35,7 @@ class GeminiClient:
         if self._client is None:
             if self.config.auth_method == AuthMethod.API_KEY:
                 if not self.config.gemini_api_key:
-                    raise AuthenticationError("API key is required for API_KEY auth method")
+                    raise AuthenticationError("GEMINI_API_KEY is required for API_KEY auth method")
                 self._client = genai.Client(api_key=self.config.gemini_api_key)
                 self._log_auth_method("API Key (Developer API)")
             else:  # VERTEX_AI
@@ -204,14 +204,14 @@ class GeminiClient:
             if param in config:
                 filtered[param] = config[param]
 
-        # Pro-specific parameters - NOTE: thinking_level is NOT supported by gemini-3-pro-image-preview
+        # Pro-specific parameters - NOTE: thinking_level is NOT supported by gemini-3-pro-image
         if isinstance(self.gemini_config, ProImageConfig):
             # Resolution is handled via ImageConfig.image_size, not here
             # Grounding is controlled via prompt/system instructions
             # thinking_level is NOT available for this model
             if "thinking_level" in config:
                 self.logger.info(
-                    "Note: thinking_level is not supported by gemini-3-pro-image-preview, ignoring"
+                    "Note: thinking_level is not supported by gemini-3-pro-image, ignoring"
                 )
 
         else:

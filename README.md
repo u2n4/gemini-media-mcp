@@ -3,7 +3,7 @@
   <img src="assets/banner.png" alt="Gemini Media MCP" width="100%">
 
   <h1>Gemini Media MCP</h1>
-  <p><strong>All-in-one MCP toolkit for AI media generation -- VEO 3.1 video + NanoBanana Pro 2 images + prompting skills</strong></p>
+  <p><strong>All-in-one MCP toolkit for AI media generation -- Gemini Omni video + NanoBanana Pro 2 images + prompting skills</strong></p>
 
   <p>
     <a href="https://pypi.org/project/veo-mcp-server/"><img src="https://img.shields.io/pypi/v/veo-mcp-server?style=for-the-badge&logo=pypi&logoColor=white&label=veo" alt="PyPI veo-mcp-server"></a>
@@ -35,7 +35,7 @@
 
 ## What is This?
 
-Gemini Media MCP is a comprehensive toolkit that brings Google's most powerful AI media generation models into any MCP-compatible AI assistant. Generate 4K videos with VEO 3.1, create stunning images with NanoBanana Pro 2, and craft professional prompts with built-in skills -- all from a single repository.
+Gemini Media MCP is a comprehensive toolkit that brings Google's most powerful AI media generation models into any MCP-compatible AI assistant. Generate videos with Gemini Omni, create stunning images with NanoBanana Pro 2, and craft professional prompts with built-in skills -- all from a single repository.
 
 ## What's Included
 
@@ -43,7 +43,7 @@ Gemini Media MCP is a comprehensive toolkit that brings Google's most powerful A
 
 | Server | Description | Tools |
 |--------|-------------|-------|
-| **VEO 3.1** | AI video generation (text-to-video, image-to-video, extend, interpolate) | 9 tools |
+| **Gemini Omni (VEO server)** | AI video generation (text-to-video, image-to-video) | 7 tools |
 | **NanoBanana** | AI image generation with NanoBanana Pro 2 (Pro + Flash models) | 4 tools |
 
 ### Claude Code Skills (Plugin Marketplace)
@@ -72,14 +72,12 @@ Add a block to your MCP client config (Claude Desktop, Claude Code, Cursor, VS C
 git clone https://github.com/u2n4/gemini-media-mcp.git
 cd gemini-media-mcp
 
-# Create a virtual environment (uv pip install requires one — or pass --system)
-uv venv
-source .venv/bin/activate     # macOS / Linux
-# .venv\Scripts\activate     # Windows PowerShell
+# Each server needs its own environment (different MCP major versions).
+uv sync --project servers/veo
+uv sync --project servers/nanobanana
 
-# Install one or both sub-packages
-uv pip install -e servers/veo
-uv pip install -e servers/nanobanana
+uv run --project servers/veo veo-mcp-server --help
+uv run --project servers/nanobanana nanobanana-imagen-mcp --help
 ```
 
 ### VEO Server
@@ -139,20 +137,18 @@ pip install nanobanana-imagen-mcp
 
 ## VEO Server
 
-AI video generation powered by Google VEO 3.1. Uses an async job pattern where generation starts in the background and returns a job ID for polling -- no timeouts.
+AI video generation powered by `gemini-omni-1.2-flash` through the Interactions API. Uses an async job pattern where generation starts in the background and returns a job ID for polling -- no timeouts.
 
 ### Tools
 
 | Tool | Description |
 |------|-------------|
-| `veo_generate_video` | Generate video from text prompt. Supports 720p/1080p/4K, 16:9 or 9:16, 4/6/8 second duration, negative prompts, reference images, seed control, and batch generation (1-4 videos). |
-| `veo_image_to_video` | Animate a reference image with a motion prompt. |
-| `veo_interpolate_video` | Create smooth transition between two frames (first frame + last frame). |
-| `veo_extend_video` | Extend an existing VEO video by ~7 seconds. 720p only, max 148 seconds total. |
+| `veo_generate_video` | Generate from text: 3–15 seconds (default 10), 360p/720p/1080p/4k, 16:9 or 9:16. Returns a background job ID. |
+| `veo_image_to_video` | Animate a JPEG, PNG or WebP with a text prompt; same duration, resolution and aspect options. |
 | `veo_check_job` | Check async job status. Call every 15-20 seconds until completed or failed. |
 | `veo_list_jobs` | List all generation jobs and their current status. |
 | `veo_api_status` | Check API key status -- keys configured, active key, keys remaining. |
-| `veo_pricing_info` | Show pricing per second for standard and fast models at all resolutions. |
+| `veo_pricing_info` | Link to current Gemini Omni pricing documentation. |
 | `veo_show_output_stats` | Display generation statistics -- video count, total size, file details, job statuses. |
 
 ### VEO Configuration
@@ -167,8 +163,8 @@ AI video generation powered by Google VEO 3.1. Uses an async job pattern where g
 
 | Tier | Model | Best For |
 |------|-------|----------|
-| Standard | `veo-3.1-generate-preview` | Higher quality output |
-| Fast | `veo-3.1-fast-generate-preview` | Quicker generation |
+| Standard | `gemini-omni-1.2-flash` | Default model |
+| Fast | `gemini-omni-1.2-flash` | Compatibility alias; same model as Standard |
 
 ## NanoBanana Server
 
@@ -187,8 +183,8 @@ AI image generation powered by NanoBanana Pro 2. Supports Pro (maximum quality) 
 
 | Model | Engine | Best For |
 |-------|--------|----------|
-| Pro | Gemini 3 Pro Image | Maximum quality, complex scenes |
-| Flash | Gemini 3.1 Flash Image | Fast generation, simple scenes |
+| Pro | `gemini-3-pro-image` | Maximum quality, complex scenes |
+| Flash | `gemini-nano-banana-2.1` | Fast generation, simple scenes |
 
 ## Prompting Skills
 
@@ -217,7 +213,7 @@ AI image generation powered by NanoBanana Pro 2. Supports Pro (maximum quality) 
 ```
 gemini-media-mcp/
 ├── servers/
-│   ├── veo/                       # VEO 3.1 MCP Server (PyPI: veo-mcp-server)
+│   ├── veo/                       # Gemini Omni Video MCP Server (PyPI: veo-mcp-server)
 │   │   ├── pyproject.toml
 │   │   ├── requirements.txt
 │   │   └── src/
@@ -279,3 +275,14 @@ If you find this useful, please star this repository!
 ---
 
 Made with ❤️ in the Eastern Province of Saudi Arabia.
+
+## Refresh verification — 2026-11-05
+
+Gemini paths were tested only with a fake client and never live. Both API keys
+were unset for all test runs; tests block real SDK clients and HTTP requests.
+`gemini-3.1-flash-image` is also listed as Stable; this server's Flash route uses
+the documented preview replacement `gemini-nano-banana-2.1`.
+
+VEO uses `mcp>=1.0.0,<2`; NanoBanana uses `fastmcp>=4,<5`. Install them in
+separate environments or use their independent `uvx` commands. Both cap
+`google-genai>=2.5.0,<3`. See each server's CHANGELOG for migration details.

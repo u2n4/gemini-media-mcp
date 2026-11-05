@@ -53,8 +53,8 @@ Generates AI images using NanoBanana Pro 2 models. Supports text-to-image genera
 
 | Model | Engine | Best For |
 |-------|--------|----------|
-| Pro | Gemini 3 Pro Image | Maximum quality, complex scenes, photorealism |
-| Flash | Gemini 3.1 Flash Image | Fast generation, simple scenes, quick iterations |
+| Pro | `gemini-3-pro-image` | Maximum quality, complex scenes, photorealism |
+| Flash | `gemini-nano-banana-2.1` | Fast generation, simple scenes, quick iterations |
 
 ## Configuration
 
@@ -131,3 +131,18 @@ MIT
 ## Credits
 
 Inspired by the nano-banana naming convention used across the MCP community. This is an independent implementation.
+
+## Refresh verification — 2026-11-05
+
+Gemini paths were tested only with a fake client and never live. Both API keys
+were unset for all test runs; tests block real SDK clients and HTTP requests.
+`gemini-3.1-flash-image` is also listed as Stable; this server's Flash route uses
+the documented preview replacement `gemini-nano-banana-2.1`.
+
+Dependencies: `fastmcp>=4,<5`, `google-genai>=2.5.0,<3`.
+Clean tool registration checked with FastMCP 4.1.6 and SDK 2.34.0.
+The `ToolResult` imports now use the FastMCP 4 module path.
+
+```bash
+env -u GEMINI_API_KEY -u GOOGLE_API_KEY -u GEMINI_API_KEY_BACKUP uv run --locked pytest tests -q
+```

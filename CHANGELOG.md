@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and each sub-package (`servers/veo`, `servers/nanobanana`) follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-11-05
+
+- Refresh image model IDs and migrate video generation to Gemini Omni Interactions.
+- Remove `veo_extend_video`, `veo_interpolate_video` and unsupported legacy options.
+- Cap dependencies, sync requirements and regenerate both lockfiles.
+- Add offline fake-client suites and CI tests; publish jobs depend on tests of the tagged commit.
+- Make VEO pyright blocking (0 errors); keep NanoBanana nonblocking (62 errors).
+- Gemini paths tested only with a fake client and never live; no API keys available.
+- See both server CHANGELOGs for request changes and removals.
+
 ## [1.1.2] - 2026-04-18
 
 ### Added

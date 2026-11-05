@@ -4,7 +4,7 @@ CLI smoke tests for veo-mcp-server.
 These tests verify:
   (a) The package can be imported with no API keys in the environment
       without triggering sys.exit (lazy init check).
-  (b) `veo-mcp-server --help` exits 0 with a dummy GEMINI_API_KEY.
+  (b) `veo-mcp-server --help` exits 0 without API keys.
   (c) `veo-mcp-server --version` exits 0 and prints the version string
       (skipped when running from source tree without the package installed).
 
@@ -21,7 +21,6 @@ import sys
 def _base_env(tmp_path) -> dict:
     """Minimal Windows-safe environment for subprocess calls."""
     env = {
-        "GEMINI_API_KEY": "dummy-key-for-testing",
         "VIDEO_OUTPUT_DIR": str(tmp_path / "veo-videos"),
         "PATH": os.environ.get("PATH", ""),
     }
@@ -48,12 +47,11 @@ def test_import_no_env(tmp_path, monkeypatch):
     """
     Importing veo_mcp_server with no API keys must NOT call sys.exit().
 
-    We run it in a subprocess with an empty GEMINI_API_KEY so that the
+    We run it in a subprocess without GEMINI_API_KEY so that the
     lazy init path is exercised but the import itself should complete
     without error (exit code 0 means the import completed cleanly).
     """
     env = _base_env(tmp_path)
-    env["GEMINI_API_KEY"] = ""  # no key — should NOT exit at import
 
     result = subprocess.run(
         [
@@ -73,9 +71,9 @@ def test_import_no_env(tmp_path, monkeypatch):
     assert "import ok" in result.stdout
 
 
-def test_help_with_dummy_env(tmp_path):
+def test_help_without_keys(tmp_path):
     """
-    `veo-mcp-server --help` must exit 0 with a dummy GEMINI_API_KEY.
+    `veo-mcp-server --help` must exit 0 without API keys.
     No actual API call is made; argparse exits before any client is built.
     """
     env = _base_env(tmp_path)
@@ -94,7 +92,7 @@ def test_help_with_dummy_env(tmp_path):
     assert "veo-mcp-server" in result.stdout.lower() or "usage" in result.stdout.lower()
 
 
-def test_version_with_dummy_env(tmp_path):
+def test_version_without_keys(tmp_path):
     """
     `veo-mcp-server --version` must exit 0 and print a version string.
 
@@ -137,7 +135,6 @@ def test_no_home_pollution(tmp_path, monkeypatch):
     env = _base_env(tmp_path)
     env["HOME"] = str(fake_home)
     env["USERPROFILE"] = str(fake_home)
-    env["GEMINI_API_KEY"] = ""
 
     subprocess.run(
         [sys.executable, "-c", "import veo_mcp_server"],

@@ -5,6 +5,21 @@ All notable changes to `veo-mcp-server` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] — 2026-11-05
+
+- Migrate text and image video tools to `gemini-omni-1.2-flash` using Interactions.
+- Keep background jobs; decode inline video or poll URI files until ACTIVE and download via SDK.
+- Support 3–15 seconds (default 10), 360p/720p/1080p/4k, and 16:9/9:16.
+- `standard` and `fast` remain compatibility aliases for the same Omni model.
+- Remove `veo_extend_video` and its video-object cache/expiry code.
+- Remove `veo_interpolate_video` and its first/last-frame request code.
+- Remove unconfirmed legacy seed, batch, negative-prompt and reference-image parameters.
+- Remove old operations polling, destructive file cleanup and HTTP download fallbacks.
+- Missing credentials now raise an error naming GEMINI_API_KEY instead of exiting.
+- Cap MCP to `>=1.0.0,<2` and google-genai to `>=2.5.0,<3`; sync requirements.
+- Gemini paths tested only with a fake client, never live; no API key available.
+- Request shape: https://aistudio.google.com/docs/omni and installed google-genai 2.34.0.
+
 ## [1.1.3] — 2026-04-19
 
 ### Security
