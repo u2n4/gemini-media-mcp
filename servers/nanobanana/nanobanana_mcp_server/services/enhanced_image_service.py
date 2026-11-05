@@ -16,10 +16,10 @@ from ..utils.validation_utils import resolve_output_path
 from ..config.settings import GeminiConfig
 from ..config.constants import THUMBNAIL_SIZE, TEMP_FILE_SUFFIX
 from ..core.exceptions import AuthenticationError
+from ..core.validation import validate_input_image
 from PIL import Image as PILImage
 import os
 import logging
-import mimetypes
 import base64
 from datetime import datetime
 import hashlib
@@ -71,6 +71,7 @@ class EnhancedImageService:
         input_images: Optional[List[Tuple[str, str]]] = None,
         aspect_ratio: Optional[str] = None,
         output_path: Optional[str] = None,
+        resolution: Optional[str] = None,
     ) -> Tuple[List[MCPImage], List[Dict[str, Any]]]:
         """
         Generate images following the complete workflow from workflows.md.
@@ -131,13 +132,14 @@ class EnhancedImageService:
 
                     # Step 1-2: M->>G: generateContent -> G-->>M: inline image bytes
                     response = self.gemini_client.generate_content(
-                        contents, aspect_ratio=aspect_ratio
+                        contents, aspect_ratio=aspect_ratio,
+                        config={"resolution": resolution} if resolution else None,
                     )
                     images = self.gemini_client.extract_images(response)
 
                     for j, image_bytes in enumerate(images):
                         # Calculate overall image index for output_path naming
-                        overall_index = (i * len(images)) + j + 1
+                        overall_index = len(all_metadata) + 1
 
                         # Process each generated image through the full workflow
                         thumbnail_image, metadata = self._process_generated_image(
@@ -159,8 +161,7 @@ class EnhancedImageService:
                     raise
                 except Exception as e:
                     self.logger.error(f"Failed to generate image {i + 1}: {e}")
-                    # Continue with other images rather than failing completely
-                    continue
+                    raise
 
             self.logger.info(f"Successfully generated {len(all_thumbnail_images)} images")
             return all_thumbnail_images, all_metadata
@@ -254,20 +255,14 @@ class EnhancedImageService:
                 f"Editing image from path: {file_path}, instruction: '{instruction[:50]}...'"
             )
 
-            # Validate file exists and is readable
-            if not os.path.exists(file_path):
-                raise ValueError(f"Image file not found: {file_path}")
+            validated_path, mime_type = validate_input_image(file_path)
+            file_path = str(validated_path)
 
             # Read image file as bytes
             with open(file_path, "rb") as f:
                 image_bytes = f.read()
 
             # Detect MIME type from file extension or content
-            mime_type, _ = mimetypes.guess_type(file_path)
-            if not mime_type or not mime_type.startswith("image/"):
-                # Fallback to PNG if detection fails
-                mime_type = "image/png"
-
             # Validate image format
             validate_image_format(mime_type)
 
@@ -299,8 +294,7 @@ class EnhancedImageService:
                     all_metadata.append(metadata)
                 except Exception as e:
                     self.logger.error(f"Failed to process edited image {i + 1}: {e}")
-                    # Continue with other images rather than failing completely
-                    continue
+                    raise
 
             self.logger.info(
                 f"Successfully edited image from path, generated {len(all_thumbnail_images)} result(s)"
@@ -341,7 +335,7 @@ class EnhancedImageService:
         """
         # Step 3: M->>FS: save full-res image
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        image_hash = hashlib.md5(image_bytes).hexdigest()[:8]
+        image_hash = hashlib.sha256(image_bytes).hexdigest()[:8]
         default_filename = f"gen_{timestamp}_{response_index}_{image_index}_{image_hash}.{self.config.default_image_format}"
 
         # Resolve the output path using the utility function
@@ -360,11 +354,12 @@ class EnhancedImageService:
         try:
             with open(temp_path, "wb") as f:
                 f.write(image_bytes)
-            os.rename(temp_path, full_path)
-        except Exception as e:
+            os.replace(temp_path, full_path)
+        except Exception:
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
-            raise ValueError(f"Failed to save image: {e}")
+            self.logger.exception("Failed to save image: %s", full_path)
+            raise
 
         # Get image dimensions directly from bytes to avoid extra file I/O
         try:
@@ -446,10 +441,11 @@ class EnhancedImageService:
         """
         # Step 6: M->>FS: save new full-res image + new thumbnail
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        image_hash = hashlib.md5(image_bytes).hexdigest()[:8]
+        image_hash = hashlib.sha256(image_bytes).hexdigest()[:8]
         filename = f"edit_{timestamp}_{edit_index}_{image_hash}"
 
         full_path = os.path.join(self.out_dir, f"{filename}.{self.config.default_image_format}")
+        os.makedirs(self.out_dir, exist_ok=True)
         with open(full_path, "wb") as f:
             f.write(image_bytes)
 

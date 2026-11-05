@@ -25,7 +25,7 @@ from typing import Optional, TypedDict
 
 from google import genai
 from google.genai import interactions
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 from .core.validation import (
     validate_file_path,
@@ -132,7 +132,7 @@ def _get_output_path() -> Path:
 
 
 # ── MCP Server ───────────────────────────────────────────────────────────────
-mcp = FastMCP("omni_mcp")
+mcp = MCPServer("omni_mcp")
 
 # ── Constants ────────────────────────────────────────────────────────────────
 MODELS = {
@@ -225,21 +225,19 @@ def _start_job(prompt, model, resolution, output_path, prefix, job_type, generat
 
 
 def _call_with_rotation(fn):
-    """Call fn(). On 429 / RESOURCE_EXHAUSTED, rotate API key and retry once."""
-    try:
-        return fn()
-    except Exception as exc:
-        err = str(exc)
-        if "429" in err or "RESOURCE_EXHAUSTED" in err or "rate limit" in err.lower():
-            log.warning("Key #%d quota exhausted, attempting rotation...", _get_manager().current_index + 1)
-            if _get_manager().rotate():
-                log.info("Retrying with key #%d...", _get_manager().current_index + 1)
-                return fn()
-            raise RuntimeError(
-                f"All {len(_get_manager().clients)} API key(s) exhausted! "
-                "Retry after your Gemini quota is available."
-            ) from exc
-        raise
+    """Try each remaining key on quota errors; propagate other failures."""
+    while True:
+        try:
+            return fn()
+        except Exception as exc:
+            err = str(exc)
+            if not ("429" in err or "RESOURCE_EXHAUSTED" in err or "rate limit" in err.lower()):
+                raise
+            if not _get_manager().rotate():
+                raise RuntimeError(
+                    f"All {len(_get_manager().clients)} API key(s) exhausted! "
+                    "Retry after your Gemini quota is available."
+                ) from exc
 
 
 # ── Background Worker Functions ──────────────────────────────────────────────
@@ -250,6 +248,7 @@ def _save_video(interaction, output_file: Path, client) -> list[str]:
 
     Shape verified against https://aistudio.google.com/docs/omni and SDK 2.34.0.
     """
+    output_file = validate_output_path(str(output_file))
     video = interaction.output_video
     if video is None:
         raise RuntimeError("Omni returned no output_video.")
@@ -688,8 +687,7 @@ def main():
         action="version",
         version=f"%(prog)s {__version__}",
     )
-    # parse_known_args so MCP framework args (if any) are forwarded unchanged
-    _known, _remaining = parser.parse_known_args()
+    parser.parse_args()
 
     log.info("Starting Gemini Omni MCP Server (async job pattern)...")
     mcp.run()

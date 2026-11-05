@@ -23,6 +23,7 @@ def _base_env(tmp_path) -> dict:
     env = {
         "VIDEO_OUTPUT_DIR": str(tmp_path / "omni-videos"),
         "PATH": os.environ.get("PATH", ""),
+        "PYTHON_DOTENV_DISABLED": "1",
     }
     # Windows requires these for subprocess to work correctly
     for key in (
@@ -135,13 +136,15 @@ def test_no_home_pollution(tmp_path, monkeypatch):
     env = _base_env(tmp_path)
     env["HOME"] = str(fake_home)
     env["USERPROFILE"] = str(fake_home)
+    env.pop("VIDEO_OUTPUT_DIR", None)
 
-    subprocess.run(
+    result = subprocess.run(
         [sys.executable, "-c", "import omni_mcp_server"],
         env=env,
         capture_output=True,
         timeout=30,
     )
+    assert result.returncode == 0, result.stderr
 
     omni_videos = fake_home / "omni-videos"
     assert not omni_videos.exists(), (

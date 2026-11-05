@@ -219,7 +219,7 @@ def test_omni_image_to_video_rejects_bad_image_path():
     """omni_image_to_video must reject an image_path that targets system files."""
     from omni_mcp_server.server import omni_image_to_video
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match="blocked system"):
         omni_image_to_video(
             prompt="animate",
             image_path=r"C:\Windows\System32\notepad.exe",

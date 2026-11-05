@@ -13,6 +13,7 @@ from datetime import datetime
 import json
 import base64
 import logging
+import tempfile
 from PIL import Image as PILImage
 import io
 
@@ -63,8 +64,8 @@ class ImageStorageService:
 
     def _ensure_dirs(self) -> None:
         """Lazily create storage directories on first use."""
-        self.base_dir.mkdir(parents=True, exist_ok=True)
-        self.thumbnails_dir.mkdir(parents=True, exist_ok=True)
+        self.base_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+        self.thumbnails_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
 
     def _setup_directories(self) -> None:
         """Create necessary directories (alias kept for compatibility)."""
@@ -86,22 +87,40 @@ class ImageStorageService:
             self.logger.debug(f"Loaded {len(registry)} images from registry")
             return registry
 
-        except Exception as e:
-            self.logger.error(f"Failed to load image registry: {e}")
-            return {}
+        except Exception:
+            self.logger.exception("Failed to load image registry; preserving original file")
+            raise
 
     def _save_registry(self) -> None:
         """Save image registry to disk."""
+        temp_path = None
         try:
+            self._ensure_dirs()
             data = {}
             for image_id, info in self.image_registry.items():
                 data[image_id] = asdict(info)
 
-            with open(self.metadata_file, "w") as f:
+            with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=self.base_dir,
+                                             delete=False) as f:
+                temp_path = f.name
                 json.dump(data, f, indent=2)
+            os.replace(temp_path, self.metadata_file)
 
-        except Exception as e:
-            self.logger.error(f"Failed to save image registry: {e}")
+        except Exception:
+            self.logger.exception("Failed to save image registry")
+            raise
+        finally:
+            if temp_path and os.path.exists(temp_path):
+                os.unlink(temp_path)
+
+    def _validated_paths(self, info: StoredImageInfo) -> tuple[Path, Path]:
+        """Never trust paths loaded from a mutable registry for read or delete."""
+        root = self.base_dir.resolve()
+        full = Path(info.full_path).resolve()
+        thumb = Path(info.thumbnail_path).resolve()
+        if not full.is_relative_to(root) or not thumb.is_relative_to(self.thumbnails_dir.resolve()):
+            raise ValueError("Image registry path escapes storage directory")
+        return full, thumb
 
     def _cleanup_expired(self) -> None:
         """Remove expired images and their metadata."""
@@ -110,14 +129,11 @@ class ImageStorageService:
 
         for image_id, info in self.image_registry.items():
             if current_time > info.expires_at:
-                expired_ids.append(image_id)
-
                 # Remove files
                 try:
-                    if os.path.exists(info.full_path):
-                        os.remove(info.full_path)
-                    if os.path.exists(info.thumbnail_path):
-                        os.remove(info.thumbnail_path)
+                    for path in self._validated_paths(info):
+                        path.unlink(missing_ok=True)
+                    expired_ids.append(image_id)
                 except Exception as e:
                     self.logger.error(f"Failed to remove expired image {image_id}: {e}")
 
@@ -137,7 +153,9 @@ class ImageStorageService:
 
             # Convert to RGB if needed (for JPEG compatibility)
             if image.mode in ("RGBA", "LA", "P"):
-                image = image.convert("RGB")
+                rgba = image.convert("RGBA")
+                image = PILImage.new("RGB", rgba.size, "white")
+                image.paste(rgba, mask=rgba.getchannel("A"))
 
             # Calculate thumbnail size preserving aspect ratio
             image.thumbnail(self.thumbnail_max_size, PILImage.Resampling.LANCZOS)
@@ -269,9 +287,9 @@ class ImageStorageService:
         if not info:
             return None
 
-        path = info.thumbnail_path if thumbnail else info.full_path
-
         try:
+            full_path, thumb_path = self._validated_paths(info)
+            path = thumb_path if thumbnail else full_path
             with open(path, "rb") as f:
                 return f.read()
         except Exception as e:
@@ -300,10 +318,8 @@ class ImageStorageService:
 
         try:
             # Remove files
-            if os.path.exists(info.full_path):
-                os.remove(info.full_path)
-            if os.path.exists(info.thumbnail_path):
-                os.remove(info.thumbnail_path)
+            for path in self._validated_paths(info):
+                path.unlink(missing_ok=True)
 
             # Remove from registry
             del self.image_registry[image_id]

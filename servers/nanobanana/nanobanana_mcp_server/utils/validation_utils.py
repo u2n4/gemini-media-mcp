@@ -1,11 +1,11 @@
 """Additional validation utilities beyond core validation."""
 
 from typing import Any, List, Optional, Union
-from pathlib import Path
 import re
 import os
 from urllib.parse import urlparse
 from ..core.exceptions import ValidationError
+from .path_utils import resolve_safe_path
 
 # Supported image extensions for output path detection
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
@@ -30,7 +30,7 @@ def validate_positive_integer(
     value: Any, name: str, min_value: int = 1, max_value: Optional[int] = None
 ) -> None:
     """Validate that a value is a positive integer within bounds."""
-    if not isinstance(value, int):
+    if type(value) is not int:
         raise ValidationError(f"{name} must be an integer")
 
     if value < min_value:
@@ -136,7 +136,7 @@ def sanitize_filename(filename: str) -> str:
     filename = os.path.basename(filename)
 
     # Replace invalid characters with underscores
-    invalid_chars = '<>:"|?*\\'
+    invalid_chars = '<>:"|?*\\' + ''.join(chr(i) for i in range(32))
     for char in invalid_chars:
         filename = filename.replace(char, "_")
 
@@ -146,6 +146,8 @@ def sanitize_filename(filename: str) -> str:
     # Ensure it's not empty
     if not filename:
         filename = "untitled"
+    if re.fullmatch(r"(?i:con|prn|aux|nul|com[1-9]|lpt[1-9])", filename.split('.')[0]):
+        filename = "_" + filename
 
     return filename
 
@@ -287,13 +289,13 @@ def resolve_output_path(
     """
     # Mode 1: None - use default directory with generated filename
     if output_path is None:
-        default_path = Path(default_dir).resolve()
+        default_path = resolve_safe_path(default_dir)
+        target = resolve_safe_path(str(default_path / default_filename))
         default_path.mkdir(parents=True, exist_ok=True)
-        return str(default_path / default_filename)
+        return str(target)
 
     # Expand ~ to home directory
-    expanded_path = os.path.expanduser(output_path)
-    resolved = Path(expanded_path).resolve()
+    resolved = resolve_safe_path(output_path)
 
     # Check if it looks like a file path (has a recognizable image extension)
     if resolved.suffix.lower() in IMAGE_EXTENSIONS:
@@ -304,7 +306,7 @@ def resolve_output_path(
         if image_index > 1:
             stem = resolved.stem
             suffix = resolved.suffix
-            return str(resolved.parent / f"{stem}_{image_index}{suffix}")
+            return str(resolve_safe_path(str(resolved.parent / f"{stem}_{image_index}{suffix}")))
 
         return str(resolved)
 
@@ -342,9 +344,7 @@ def validate_output_path(output_path: str | None) -> None:
     if not output_path.strip():
         raise ValidationError("output_path cannot be an empty string")
 
-    # Expand and resolve the path
-    expanded = os.path.expanduser(output_path)
-    resolved = Path(expanded).resolve()
+    resolved = resolve_safe_path(output_path)
 
     # Check if parent directory exists or can be created
     # We don't create it here, just validate it's not impossible
@@ -360,10 +360,3 @@ def validate_output_path(output_path: str | None) -> None:
             # We got to root without finding an existing ancestor
             # This is actually fine - we'll create the directories
             pass
-
-    # Check for obviously problematic paths
-    path_str = str(resolved).lower()
-    dangerous_paths = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/etc", "/var/log"]
-    for dangerous in dangerous_paths:
-        if path_str.startswith(dangerous):
-            raise ValidationError(f"Cannot write to system directory: {dangerous}")

@@ -2,6 +2,7 @@
 
 from typing import List, Optional
 import re
+from pathlib import Path
 from ..config.constants import SUPPORTED_IMAGE_TYPES
 from .exceptions import ValidationError
 
@@ -28,7 +29,7 @@ def validate_prompt(prompt: str) -> None:
 
 def validate_image_count(n: int) -> None:
     """Validate requested image count."""
-    if not isinstance(n, int):
+    if type(n) is not int:
         raise ValidationError("Image count must be an integer")
 
     if n < 1 or n > 4:
@@ -51,6 +52,8 @@ def validate_base64_image(image_b64: str) -> None:
     """Validate base64 encoded image."""
     if not image_b64:
         raise ValidationError("Base64 image data cannot be empty")
+    if len(image_b64) > ((20 * 1024 * 1024 + 2) // 3) * 4:
+        raise ValidationError("Base64 image exceeds 20 MiB limit")
 
     try:
         import base64
@@ -88,22 +91,34 @@ def validate_image_list_consistency(
             raise ValidationError(f"Invalid image {i + 1}: {e}")
 
 
-def validate_file_path(path: str) -> None:
+def validate_file_path(path: str) -> Path:
     """Validate file path for uploads."""
-    if not path or not path.strip():
-        raise ValidationError("File path cannot be empty")
+    from ..utils.path_utils import resolve_safe_path
 
-    # Basic path traversal protection
-    if ".." in path or path.startswith("/"):
-        raise ValidationError("Invalid file path: potential security risk")
-
-    import os
-
-    if not os.path.exists(path):
+    resolved = resolve_safe_path(path)
+    if not resolved.exists():
         raise ValidationError(f"File not found: {path}")
 
-    if not os.path.isfile(path):
+    if not resolved.is_file():
         raise ValidationError(f"Path is not a file: {path}")
+    return resolved
+
+
+def validate_input_image(path: str) -> tuple[Path, str]:
+    """Validate size and actual image content before reading it for Gemini."""
+    from PIL import Image, UnidentifiedImageError
+
+    resolved = validate_file_path(path)
+    if resolved.stat().st_size > 20 * 1024 * 1024:
+        raise ValidationError("Input image exceeds 20 MiB limit")
+    try:
+        with Image.open(resolved) as image:
+            mime_type = Image.MIME.get(image.format)
+            validate_image_format(mime_type or "")
+            image.verify()
+    except (OSError, ValueError, UnidentifiedImageError) as exc:
+        raise ValidationError("Input file is not a valid supported image") from exc
+    return resolved, mime_type
 
 
 def validate_edit_instruction(instruction: str) -> None:

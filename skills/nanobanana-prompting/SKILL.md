@@ -1,6 +1,6 @@
 ---
 name: nanobanana-prompting
-description: Master skill for crafting professional NanoBanana Pro (Gemini Imagen 3) prompts. Activates whenever the user asks to generate, create, or make an image using NanoBanana Pro or nanobanana MCP tool. Ensures photorealistic, cinematic, and high-quality AI images by applying structured 7-layer prompt engineering, meta tokens, camera simulation, and lighting techniques.
+description: Master skill for crafting professional NanoBanana (Gemini Nano Banana 2.1 and Gemini 3 Pro Image) prompts. Activates whenever the user asks to generate, create, or make an image using NanoBanana Pro or nanobanana MCP tool. Ensures photorealistic, cinematic, and high-quality AI images by applying structured 7-layer prompt engineering, meta tokens, camera simulation, and lighting techniques.
 ---
 
 # NanoBanana Pro Prompting Mastery
@@ -367,10 +367,11 @@ When calling `nanobanana:generate_image`, use these settings:
 | `aspect_ratio` | `"16:9"` landscape/thumbnails, `"9:16"` reels/stories, `"3:4"` portraits, `"1:1"` square, `"4:5"` Instagram |
 | `negative_prompt` | ALWAYS include: `"blur, artifacts, distorted anatomy, low quality, watermarks"` |
 | `resolution` | `"high"` default, `"4k"` for maximum detail with pro model |
-| `thinking_level` | `"high"` for complex multi-element scenes, `"low"` for simple subjects |
-| `enable_grounding` | `true` for real-world subjects, locations, known objects |
+| `thinking_level` | Legacy advisory value; this wrapper does not send a thinking-level control to the image model. |
+| `enable_grounding` | Adds advisory prompt text on the Pro path; this wrapper does not register the Google Search tool. |
 | `n` | `1` default, increase only for comparing variations |
-| `output_path` | Do NOT set -- images auto-save to `./images` |
+| `output_path` | Optional file/directory override; default is `IMAGE_OUTPUT_DIR` or `~/nanobanana-images`. Reuse the returned `file_paths` for reference inputs. |
+| `input_image_path_1/2/3` | Local reference images; use the returned full path of the hero image. |
 
 ---
 
@@ -535,7 +536,7 @@ Color grading: Slight teal and orange shift, high dynamic range,
 rich shadows with lifted blacks.
 ```
 
-With `negative_prompt`: "blur, artifacts, beauty filters, airbrushing, CGI feel, distortion, over-smoothed skin"
+With `negative_prompt`: "blur, artifacts, distorted anatomy, low quality, watermarks, beauty filters, airbrushing, CGI feel, distortion, over-smoothed skin"
 With `model_tier`: "pro", `aspect_ratio`: "3:4", `resolution`: "high", `enable_grounding`: true
 
 ---
@@ -551,8 +552,11 @@ Use this technique when you need multiple images of the SAME subject from differ
 
 ### Workflow
 
+The following calls are conceptual tool-call notation. In an MCP client, select
+`generate_image` and pass these named arguments as an object; do not execute them as Python.
+
 **Step 1: Hero Shot (full detail prompt)**
-```python
+```text
 nanobanana:generate_image(
     prompt="[Full 7-layer structured prompt with all details]",
     model_tier="pro",
@@ -566,7 +570,7 @@ nanobanana:generate_image(
 ```
 
 **Step 2+: Additional Angles (reference + new angle prompt)**
-```python
+```text
 nanobanana:generate_image(
     prompt="Unprocessed RAW photo. [New angle description] of the EXACT SAME [subject] from the reference image. Same location, same lighting, same conditions. [Camera specs for this angle]. Same color grading as reference.",
     input_image_path_1="[path to hero shot]",
@@ -583,7 +587,7 @@ nanobanana:generate_image(
 - **Always add to negative_prompt:** `"different car, different color, different location"` (or equivalent for your subject)
 - **Always repeat:** `"EXACT SAME [subject] from the reference image"` in every follow-up prompt
 - **Always mention:** `"Same location, same lighting, same conditions, same color grading"`
-- **Never use output_path** — let images auto-save to default directory
+- Use the returned `file_paths` for references; set `output_path` when a specific destination is needed.
 
 ### Example: Car Multi-Angle (Porsche GT4 RS)
 

@@ -33,11 +33,11 @@ jobs:
       matrix:
         server: [omni, nanobanana]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v10.3.3
         with:
           python-version: "3.12"
       - name: Test tagged commit without Gemini credentials
@@ -53,10 +53,10 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v10.3.3
         with:
           python-version: "3.12"
 
@@ -65,7 +65,7 @@ jobs:
         run: uv build
 
       - name: Publish omni to PyPI (OIDC)
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@v1.14.3
         with:
           packages-dir: servers/omni/dist
 
@@ -78,10 +78,10 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v10.3.3
         with:
           python-version: "3.12"
 
@@ -90,6 +90,6 @@ jobs:
         run: uv build
 
       - name: Publish nanobanana to PyPI (OIDC)
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@v1.14.3
         with:
           packages-dir: servers/nanobanana/dist

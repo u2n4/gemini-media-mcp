@@ -2,7 +2,8 @@ from typing import Annotated, Optional
 from pydantic import Field
 from fastmcp import FastMCP, Context
 from fastmcp.tools.base import ToolResult
-from ..core.exceptions import ValidationError, FileOperationError
+from ..core.exceptions import AuthenticationError, ValidationError, FileOperationError
+from fastmcp.exceptions import ToolError
 import logging
 
 
@@ -38,7 +39,7 @@ def register_upload_file_tool(server: FastMCP):
         logger = logging.getLogger(__name__)
 
         try:
-            logger.info(f"Upload file request: path='{path}', display_name='{display_name}'")
+            logger.info("Upload file request: path=%r, display_name=%r", path, display_name)
 
             # Get service (would be injected in real implementation)
             file_service = _get_file_service()
@@ -56,6 +57,8 @@ def register_upload_file_tool(server: FastMCP):
                 content=[summary], structured_content={"success": True, "file": metadata}
             )
 
+        except AuthenticationError as e:
+            raise ToolError(str(e)) from e
         except ValidationError as e:
             logger.error(f"Validation error in upload_file: {e}")
             return ToolResult(
@@ -65,12 +68,12 @@ def register_upload_file_tool(server: FastMCP):
         except FileOperationError as e:
             logger.error(f"File operation error in upload_file: {e}")
             return ToolResult(
-                content=[f"File upload failed: {e}"],
-                structured_content={"error": "file_operation_error", "message": str(e)},
+                content=["File upload failed; see server logs for details"],
+                structured_content={"error": "file_operation_error", "message": "File upload failed"},
             )
         except Exception as e:
-            logger.error(f"Unexpected error in upload_file: {e}")
-            raise
+            logger.exception("Unexpected error in upload_file")
+            raise ToolError("File upload failed; see server logs for details") from e
 
 
 def _get_file_service():

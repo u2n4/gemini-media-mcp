@@ -16,7 +16,7 @@ import json
 import os
 import sqlite3
 import threading
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional, NamedTuple
@@ -24,6 +24,15 @@ import logging
 
 
 DEFAULT_DB_PATH: Path = Path.home() / "nanobanana-images" / "images.db"
+
+
+def _db_time(value: Optional[datetime]) -> Optional[str]:
+    """Serialize explicitly in server local time, matching existing naive rows."""
+    if value is None:
+        return None
+    if value.tzinfo is not None:
+        value = value.astimezone().replace(tzinfo=None)
+    return value.isoformat(sep=" ")
 
 
 def _resolve_db_path(explicit_path: Optional[str] = None) -> str:
@@ -114,9 +123,11 @@ class ImageDatabaseService:
         self._ensure_initialized()
         if self._is_memory:
             with self._memory_lock:
-                yield self._memory_conn  # type: ignore[misc]
+                assert self._memory_conn is not None
+                with self._memory_conn:
+                    yield self._memory_conn
         else:
-            with sqlite3.connect(self.db_path) as conn:
+            with closing(sqlite3.connect(self.db_path)) as conn, conn:
                 yield conn
 
     # ------------------------------------------------------------------
@@ -155,7 +166,7 @@ class ImageDatabaseService:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_expires_at ON images(expires_at)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_path ON images(path)")
         else:
-            with sqlite3.connect(self.db_path) as conn:
+            with closing(sqlite3.connect(self.db_path)) as conn, conn:
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS images (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -225,7 +236,13 @@ class ImageDatabaseService:
         if file_id and expires_at is None:
             expires_at = now + timedelta(hours=48)
 
+        now = _db_time(now)
+        expires_at = _db_time(expires_at)
+
         with self._conn() as conn:
+            # Acquire the write reservation before checking for an existing row.
+            # This serializes writers across service instances and processes.
+            conn.execute("BEGIN IMMEDIATE")
             # Check if record already exists by path
             existing = conn.execute("SELECT id FROM images WHERE path = ?", (path,)).fetchone()
 
@@ -284,8 +301,7 @@ class ImageDatabaseService:
                 record_id = cursor.lastrowid
                 self.logger.info("Inserted new image record %s for %s", record_id, path)
 
-            if not self._is_memory:
-                conn.commit()
+            conn.commit()
             return record_id
 
     def get_by_file_id(self, file_id: str) -> Optional[ImageRecord]:
@@ -337,7 +353,7 @@ class ImageDatabaseService:
                   AND expires_at <= ?
                 ORDER BY expires_at ASC
             """,
-                (cutoff_time,),
+                (_db_time(cutoff_time),),
             ).fetchall()
 
             return [self._row_to_record(row) for row in rows]
@@ -367,7 +383,7 @@ class ImageDatabaseService:
                 SET file_id = ?, file_uri = ?, expires_at = ?, updated_at = ?
                 WHERE id = ?
             """,
-                (file_id, file_uri, expires_at, datetime.now(), record_id),
+                (file_id, file_uri, _db_time(expires_at), _db_time(datetime.now()), record_id),
             )
 
             if not self._is_memory:
@@ -398,7 +414,7 @@ class ImageDatabaseService:
                 SET file_id = NULL, file_uri = NULL, expires_at = NULL, updated_at = ?
                 WHERE id = ?
             """,
-                (datetime.now(), record_id),
+                (_db_time(datetime.now()), record_id),
             )
 
             if not self._is_memory:
@@ -432,7 +448,7 @@ class ImageDatabaseService:
                     COUNT(CASE WHEN expires_at IS NOT NULL AND expires_at > ? THEN 1 END) as active
                 FROM images
             """,
-                (now, now),
+                (_db_time(now), _db_time(now)),
             ).fetchone()
 
             return {
@@ -445,7 +461,7 @@ class ImageDatabaseService:
                 "files_api_active": expiration_row[1],
             }
 
-    def cleanup_missing_files(self) -> int:
+    def cleanup_missing_files(self, dry_run: bool = False) -> int:
         """
         Remove database records for files that no longer exist on disk.
 
@@ -466,7 +482,8 @@ class ImageDatabaseService:
                 thumb_exists = os.path.exists(record.thumb_path)
 
                 if not main_exists or not thumb_exists:
-                    conn.execute("DELETE FROM images WHERE id = ?", (record.id,))
+                    if not dry_run:
+                        conn.execute("DELETE FROM images WHERE id = ?", (record.id,))
                     removed_count += 1
                     self.logger.info(
                         "Removed record %s: main=%s, thumb=%s",

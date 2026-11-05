@@ -1,6 +1,6 @@
 from typing import Optional, Dict, Any
 from .gemini_client import GeminiClient
-from ..core.exceptions import FileOperationError, ValidationError
+from ..core.exceptions import AuthenticationError, FileOperationError, ValidationError
 from ..core.validation import validate_file_path
 import logging
 import os
@@ -26,7 +26,7 @@ class FileService:
         """
         try:
             # Validate file path
-            validate_file_path(file_path)
+            file_path = str(validate_file_path(file_path))
 
             self.logger.info(f"Uploading file: {file_path}")
 
@@ -43,19 +43,23 @@ class FileService:
             file_obj = self.gemini_client.upload_file(file_path, display_name)
 
             # Extract metadata
+            state = getattr(file_obj, "state", None)
+            state = getattr(state, "name", state)
             metadata = {
                 "uri": file_obj.uri,
                 "name": file_obj.name,
                 "mime_type": getattr(file_obj, "mime_type", None),
-                "size_bytes": getattr(file_obj, "size_bytes", file_size),
+                "size_bytes": getattr(file_obj, "size_bytes", None) or file_size,
                 "display_name": display_name or os.path.basename(file_path),
                 "original_path": file_path,
+                "state": state,
+                "ready": state == "ACTIVE" and bool(file_obj.uri),
             }
 
             self.logger.info(f"Successfully uploaded file: {file_obj.name}")
             return metadata
 
-        except ValidationError:
+        except (ValidationError, AuthenticationError):
             raise  # Re-raise validation errors
         except Exception as e:
             self.logger.error(f"Failed to upload file {file_path}: {e}")
@@ -122,7 +126,7 @@ class FileService:
                     "name": file_obj.name,
                     "uri": file_obj.uri,
                     "mime_type": getattr(file_obj, "mime_type", None),
-                    "size_bytes": getattr(file_obj, "size_bytes", 0),
+                    "size_bytes": getattr(file_obj, "size_bytes", None) or 0,
                     "display_name": getattr(file_obj, "display_name", None),
                 }
                 file_list.append(file_info)
@@ -185,7 +189,7 @@ class FileService:
 
             # Analyze file types
             for file_info in files_info["files"]:
-                mime_type = file_info.get("mime_type", "unknown")
+                mime_type = file_info.get("mime_type") or "unknown"
                 if mime_type not in stats["file_types"]:
                     stats["file_types"][mime_type] = {"count": 0, "total_size_bytes": 0}
                 stats["file_types"][mime_type]["count"] += 1

@@ -258,6 +258,8 @@ class ProImageService:
                                 thumbnail_bytes = base64.b64decode(thumbnail_b64)
                                 thumbnail_image = MCPImage(data=thumbnail_bytes, format="jpeg")
                                 all_images.append(thumbnail_image)
+                            else:
+                                all_images.append(MCPImage(data=image_bytes, format=self.config.default_image_format))
 
                             metadata.update(
                                 {

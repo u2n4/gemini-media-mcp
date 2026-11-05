@@ -54,6 +54,9 @@ _BLOCKED_SYSTEM_DIRS: Tuple[str, ...] = (
     "/sbin",
     "/boot",
     "/root",
+    "/proc",
+    "/sys",
+    "/dev",
     "/var/log",
     "/var/spool",
     # macOS
@@ -73,6 +76,9 @@ _BLOCKED_HOME_SUBDIRS: Tuple[str, ...] = (
     ".git-credentials",
     ".config/gh",
     ".config/claude",
+    ".config/gcloud",
+    ".codex",
+    ".claude",
     "AppData/Roaming/Microsoft",
     "AppData/Roaming/Google/Chrome",
     "AppData/Local/Microsoft",
@@ -83,7 +89,10 @@ _BLOCKED_HOME_SUBDIRS: Tuple[str, ...] = (
 
 def _norm(p: Path | str) -> str:
     """Normalize a path for string comparison (Windows-safe, case-insensitive)."""
-    return str(p).replace("\\", "/").rstrip("/").lower()
+    value = str(p).replace("\\", "/").rstrip("/").lower()
+    if value.startswith("//"):
+        value = "/" + value.lstrip("/")
+    return value
 
 
 def _is_inside(child: Path, parent: str) -> bool:
@@ -107,11 +116,9 @@ def _check_not_in_blocked_dirs(resolved: Path, original: str = "") -> None:
             )
 
     if original:
-        norm_original = original.replace("\\", "/").rstrip("/").lower()
+        norm_original = _norm(original)
         for blocked in _BLOCKED_SYSTEM_DIRS:
-            if not blocked.startswith("/"):
-                continue  # only POSIX patterns benefit from this extra check
-            b = blocked.lower()
+            b = _norm(blocked)
             if norm_original == b or norm_original.startswith(b + "/"):
                 raise ValidationError(
                     f"Path resolves into blocked system directory: {blocked}"
@@ -119,6 +126,8 @@ def _check_not_in_blocked_dirs(resolved: Path, original: str = "") -> None:
 
     home = Path.home().resolve()
     for sub in _BLOCKED_HOME_SUBDIRS:
+        if f"/{sub.lower()}/" in f"/{_norm(resolved).strip('/')}/":
+            raise ValidationError(f"Path resolves into protected user directory: {sub}")
         candidate = home / sub
         if _is_inside(resolved, str(candidate)):
             raise ValidationError(
@@ -139,6 +148,8 @@ def _resolve_strict(user_path: str) -> Path:
         raise ValidationError(f"Path too long (max {MAX_PATH_LEN} chars)")
     if "\x00" in user_path:
         raise ValidationError("Path contains NUL byte")
+    if user_path.replace("\\", "/").startswith(("//?/", "//./")):
+        raise ValidationError("Device paths are not permitted")
 
     expanded = os.path.expanduser(user_path)
     p = Path(expanded)
@@ -235,6 +246,8 @@ def validate_video_uri(
         raise ValidationError("Video URI cannot be empty")
     if len(uri) > MAX_URI_LEN:
         raise ValidationError(f"Video URI too long (max {MAX_URI_LEN} chars)")
+    if any(ord(c) <= 32 for c in uri) or "\\" in uri:
+        raise ValidationError("Video URI contains whitespace or control characters")
 
     try:
         parsed = urlparse(uri)
@@ -248,7 +261,12 @@ def validate_video_uri(
     if parsed.username or parsed.password:
         raise ValidationError("Video URI must not include credentials")
 
-    if not any(uri.startswith(p) for p in allowed_prefixes):
+    if not any(
+        uri.startswith(prefix)
+        and parsed.hostname == urlparse(prefix).hostname
+        and parsed.netloc == urlparse(prefix).netloc
+        for prefix in allowed_prefixes
+    ):
         raise ValidationError(
             "Video URI does not match any allowed prefix. "
             f"Allowed: {allowed_prefixes}"

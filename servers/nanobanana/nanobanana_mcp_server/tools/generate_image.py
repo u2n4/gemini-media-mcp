@@ -1,6 +1,5 @@
 import base64
 import logging
-import mimetypes
 import os
 from typing import Annotated, Literal
 
@@ -12,6 +11,7 @@ from pydantic import Field
 from ..config.constants import MAX_INPUT_IMAGES
 from ..config.settings import ModelTier, ThinkingLevel
 from ..core.exceptions import ValidationError
+from ..core.validation import validate_input_image
 from ..utils.validation_utils import validate_output_path
 
 
@@ -21,7 +21,8 @@ def register_generate_image_tool(server: FastMCP):
     @server.tool(
         annotations={
             "title": "Generate or edit images (Multi-Model: Flash & Pro)",
-            "readOnlyHint": True,
+            "readOnlyHint": False,
+            "destructiveHint": True,
             "openWorldHint": True,
         }
     )
@@ -75,7 +76,7 @@ def register_generate_image_tool(server: FastMCP):
         model_tier: Annotated[
             str | None,
             Field(
-                description="Model tier: 'flash' (speed, 1024px), 'pro' (quality, up to 4K), or 'auto' (smart selection). "
+                description="Model tier: 'flash' (speed, up to 4K), 'pro' (quality, up to 4K), or 'auto' (smart selection). "
                 "Default: 'auto' - automatically selects based on prompt quality/speed indicators."
             ),
         ] = "auto",
@@ -83,21 +84,21 @@ def register_generate_image_tool(server: FastMCP):
             str | None,
             Field(
                 description="Output resolution: 'high', '4k', '2k', '1k'. "
-                "4K and 2K only available with 'pro' model. Default: 'high'."
+                "Flash and Pro both support 1K, 2K and 4K. Default: 'high'."
             ),
         ] = "high",
         thinking_level: Annotated[
             str | None,
             Field(
-                description="Reasoning depth for Pro model: 'low' (faster), 'high' (better quality). "
-                "Only applies to Pro model. Default: 'high'."
+                description="Legacy advisory thinking level; this wrapper does not send "
+                "a thinking-level control to the image model. Default: 'high'."
             ),
         ] = "high",
         enable_grounding: Annotated[
             bool,
             Field(
-                description="Enable Google Search grounding for factual accuracy (Pro model only). "
-                "Useful for real-world subjects. Default: true."
+                description="Add advisory real-world accuracy prompt text on the Pro path. "
+                "This wrapper does not register the Google Search tool. Default: true."
             ),
         ] = True,
         aspect_ratio: Annotated[
@@ -214,12 +215,7 @@ def register_generate_image_tool(server: FastMCP):
                 if len(input_image_paths) > MAX_INPUT_IMAGES:
                     raise ValidationError(f"Maximum {MAX_INPUT_IMAGES} input images allowed")
 
-                # Validate that all files exist
-                for i, path in enumerate(input_image_paths):
-                    if not os.path.exists(path):
-                        raise ValidationError(f"Input image {i + 1} not found: {path}")
-                    if not os.path.isfile(path):
-                        raise ValidationError(f"Input image {i + 1} is not a file: {path}")
+                input_image_paths = [str(validate_input_image(path)[0]) for path in input_image_paths]
 
             # Mode-specific validation
             if detected_mode == "edit":
@@ -266,9 +262,7 @@ def register_generate_image_tool(server: FastMCP):
                                 image_bytes = f.read()
 
                             # Detect MIME type
-                            mime_type, _ = mimetypes.guess_type(path)
-                            if not mime_type or not mime_type.startswith("image/"):
-                                mime_type = "image/png"  # Fallback
+                            _, mime_type = validate_input_image(path)
 
                             # Convert to base64 for internal API use
                             base64_data = base64.b64encode(image_bytes).decode("utf-8")
@@ -315,6 +309,7 @@ def register_generate_image_tool(server: FastMCP):
                         input_images=input_images,
                         aspect_ratio=aspect_ratio,
                         output_path=output_path,
+                        resolution=resolution,
                     )
 
             # Resolve return_full_image: tool param > server config > env var > default (false)

@@ -28,7 +28,7 @@ def register_operation_status_resources(server: FastMCP):
         logger = logging.getLogger(__name__)
 
         try:
-            logger.debug(f"Getting progress for operation: {operation_id}")
+            logger.debug("Getting progress for operation: %r", operation_id)
 
             tracker = get_progress_tracker()
             operation = tracker.get_operation(operation_id)
@@ -72,11 +72,11 @@ def register_operation_status_resources(server: FastMCP):
             }
 
         except ValidationError as e:
-            logger.error(f"Validation error getting progress for {operation_id}: {e}")
+            logger.error("Validation error getting progress for %r: %s", operation_id, e)
             return {"error": "validation_error", "message": str(e), "operation_id": operation_id}
-        except Exception as e:
-            logger.error(f"Error getting progress for {operation_id}: {e}")
-            return {"error": "server_error", "message": str(e), "operation_id": operation_id}
+        except Exception:
+            logger.exception("Error getting progress for %r", operation_id)
+            return {"error": "server_error", "message": "Internal error while getting progress", "operation_id": operation_id}
 
     @server.resource("progress://operations/list")
     def list_operations() -> Dict[str, Any]:
@@ -130,6 +130,6 @@ def register_operation_status_resources(server: FastMCP):
                 "filters": {"operation_type": None, "status": None},
             }
 
-        except Exception as e:
-            logger.error(f"Error listing operations: {e}")
-            return {"error": "server_error", "message": str(e), "operations": []}
+        except Exception:
+            logger.exception("Error listing operations")
+            return {"error": "server_error", "message": "Internal error while listing operations", "operations": []}

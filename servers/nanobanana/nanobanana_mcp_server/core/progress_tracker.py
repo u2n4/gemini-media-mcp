@@ -150,7 +150,7 @@ class ProgressTracker:
 
             # Add progress update
             effective_status = status or operation.status
-            self._add_update(operation, effective_status, progress_percent, message, details)
+            self._add_update(operation, effective_status, operation.progress_percent, message, details)
 
             return True
 
@@ -167,13 +167,21 @@ class ProgressTracker:
         self, operation_id: str, error_message: str, details: Optional[Dict[str, Any]] = None
     ) -> bool:
         """Mark operation as failed."""
-        return self.update_progress(
-            operation_id, -1, error_message, OperationStatus.FAILED, details
-        )
+        with self.lock:
+            operation = self.operations.get(operation_id)
+            if not operation:
+                return False
+            return self.update_progress(
+                operation_id, operation.progress_percent, error_message, OperationStatus.FAILED, details
+            )
 
     def cancel_operation(self, operation_id: str, message: str = "Operation cancelled") -> bool:
         """Cancel an operation."""
-        return self.update_progress(operation_id, -1, message, OperationStatus.CANCELLED)
+        with self.lock:
+            operation = self.operations.get(operation_id)
+            if not operation:
+                return False
+            return self.update_progress(operation_id, operation.progress_percent, message, OperationStatus.CANCELLED)
 
     def get_operation(self, operation_id: str) -> Optional[TrackedOperation]:
         """Get operation details."""

@@ -251,6 +251,9 @@ class GeminiClient:
         Gemini Files API does not support display_name parameter in upload.
         """
         try:
+            from ..core.validation import validate_file_path
+
+            file_path = str(validate_file_path(file_path))
             # Gemini Files API only accepts file parameter
             return self.client.files.upload(file=file_path)
         except Exception as e:

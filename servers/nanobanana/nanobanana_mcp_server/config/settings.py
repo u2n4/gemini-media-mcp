@@ -66,8 +66,8 @@ class ServerConfig:
         auth_method_str = os.getenv("NANOBANANA_AUTH_METHOD", "auto").lower()
         try:
             auth_method = AuthMethod(auth_method_str)
-        except ValueError:
-            auth_method = AuthMethod.AUTO
+        except ValueError as exc:
+            raise ValueError("NANOBANANA_AUTH_METHOD must be auto, api_key or vertex_ai") from exc
 
         api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         gcp_project = os.getenv("GCP_PROJECT_ID") or os.getenv("GOOGLE_CLOUD_PROJECT")
@@ -91,7 +91,7 @@ class ServerConfig:
             output_dir = str(Path.home() / "nanobanana-images")
 
         # Convert to absolute path (mkdir deferred to first actual write)
-        output_path = Path(output_dir).resolve()
+        output_path = Path(output_dir).expanduser().resolve()
 
         return cls(
             gemini_api_key=api_key,
@@ -192,8 +192,8 @@ class ModelSelectionConfig:
         model_tier_str = os.getenv("NANOBANANA_MODEL", "auto").lower()
         try:
             default_tier = ModelTier(model_tier_str)
-        except ValueError:
-            default_tier = ModelTier.AUTO
+        except ValueError as exc:
+            raise ValueError("NANOBANANA_MODEL must be auto, flash or pro") from exc
 
         return cls(default_tier=default_tier)
 
