@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import os
+
 import pytest
 
 from veo_mcp_server.core.validation import (
@@ -25,11 +27,13 @@ def test_output_path_rejects_empty():
         validate_output_path("")
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows path rule")
 def test_output_path_blocks_windows_system_dirs():
     with pytest.raises(ValidationError, match="blocked system"):
         validate_output_path(r"C:\Windows\System32\evil.mp4")
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows path rule")
 def test_output_path_blocks_program_files():
     with pytest.raises(ValidationError, match="blocked system"):
         validate_output_path(r"C:\Program Files\evil.mp4")
@@ -108,6 +112,7 @@ def test_file_path_blocks_ssh_keys():
         validate_file_path("~/.ssh/id_rsa.png")
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows path rule")
 def test_file_path_blocks_windows_system():
     with pytest.raises(ValidationError, match="blocked system"):
         validate_file_path(r"C:\Windows\System32\notepad.exe")
