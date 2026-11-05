@@ -67,6 +67,7 @@ def test_keyless_startup_and_tool_errors(monkeypatch, tmp_path, factory, auth):
     app = getattr(server, factory)()
     if factory == "create_wrapper_app":
         app = app.server
+    monkeypatch.chdir(tmp_path)
     image = tmp_path / "input.png"
     Image.new("RGB", (8, 8), "blue").save(image)
 
@@ -76,13 +77,13 @@ def test_keyless_startup_and_tool_errors(monkeypatch, tmp_path, factory, auth):
                 "generate_image", "upload_file", "show_output_stats", "maintenance",
             }
             for tier in ("flash", "pro"):
-                for inputs in ({}, {"input_image_path_1": str(image)}, {"file_id": "files/missing"}):
+                for inputs in ({}, {"input_image_path_1": image.name}, {"file_id": "files/missing"}):
                     result = await client.call_tool("generate_image", {
                         "prompt": "A blue square", "model_tier": tier, **inputs,
                     }, raise_on_error=False)
                     assert result.is_error
                     assert "GEMINI_API_KEY" in str(result.content)
-            result = await client.call_tool("upload_file", {"path": str(image)},
+            result = await client.call_tool("upload_file", {"path": image.name},
                                             raise_on_error=False)
             assert "GEMINI_API_KEY" in str(result.content)
     asyncio.run(check())
