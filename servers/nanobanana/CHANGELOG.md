@@ -8,6 +8,9 @@
 - Cap dependencies to `fastmcp>=4,<5` and `google-genai>=2.5.0,<3`; sync requirements and lockfile.
 - Fix FastMCP 4 `ToolResult` import paths; four tools register with FastMCP 4.1.6.
 - Missing API-key authentication errors explicitly name GEMINI_API_KEY.
+- Start and list tools without an API key; defer credential checks to Gemini use.
+- Propagate authentication failures from image generation instead of returning an
+  empty successful result; test both app factories and Flash/Pro/upload tool calls.
 - Add fake image-client, missing-key and in-process MCP tool-list tests; remove dummy environment keys from smoke tests.
 - Update package and MCP Registry metadata to 1.2.0.
 - Gemini paths were tested only with a fake client and never live. No API key was available.

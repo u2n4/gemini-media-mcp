@@ -15,7 +15,7 @@ import logging
 from google.genai import types as gx
 from .gemini_client import GeminiClient
 from .image_database_service import ImageDatabaseService, ImageRecord
-from ..core.exceptions import FileOperationError
+from ..core.exceptions import AuthenticationError, FileOperationError
 
 
 class FilesAPIService:
@@ -117,6 +117,8 @@ class FilesAPIService:
                 else:
                     self.logger.info(f"File {file_id} is in state: {file_state}")
 
+            except AuthenticationError:
+                raise
             except Exception as api_error:
                 self.logger.info(f"Files API error for {file_id}: {api_error}")
 
@@ -140,6 +142,8 @@ class FilesAPIService:
             )
             return None, record
 
+        except AuthenticationError:
+            raise
         except Exception as e:
             self.logger.error(f"Error in get_file_with_fallback for {file_id}: {e}")
             return None, None

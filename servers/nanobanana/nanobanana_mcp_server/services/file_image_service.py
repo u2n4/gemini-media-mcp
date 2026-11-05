@@ -16,6 +16,7 @@ from .gemini_client import GeminiClient
 from ..utils.image_utils import validate_image_format
 from ..config.settings import GeminiConfig, ServerConfig
 from ..core.progress_tracker import ProgressContext
+from ..core.exceptions import AuthenticationError
 
 
 class FileImageService:
@@ -202,6 +203,8 @@ class FileImageService:
 
                         self.logger.info(f"Saved image to {full_path} ({len(image_bytes)} bytes)")
 
+                except AuthenticationError:
+                    raise
                 except Exception as e:
                     self.logger.error(f"Failed to generate image {i + 1}: {e}")
                     # Continue with other images rather than failing completely

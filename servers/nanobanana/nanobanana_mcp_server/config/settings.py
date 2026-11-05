@@ -75,22 +75,14 @@ class ServerConfig:
         # Users can override via GCP_REGION or GOOGLE_CLOUD_LOCATION env vars
         gcp_region = os.getenv("GCP_REGION") or os.getenv("GOOGLE_CLOUD_LOCATION") or "global"
 
-        # Validation logic
-        if auth_method == AuthMethod.API_KEY:
-            if not api_key:
-                raise ValueError(AUTH_ERROR_MESSAGES["api_key_required"])
-
-        elif auth_method == AuthMethod.VERTEX_AI:
+        # Credentials are checked lazily by GeminiClient, so discovery needs no key.
+        if auth_method == AuthMethod.VERTEX_AI:
             if not gcp_project:
                 raise ADCConfigurationError(AUTH_ERROR_MESSAGES["vertex_ai_project_required"])
 
-        else:  # AUTO
-            if not api_key:
-                if not gcp_project:
-                    raise ValueError(AUTH_ERROR_MESSAGES["no_auth_configured"])
-                auth_method = AuthMethod.VERTEX_AI
-            else:
-                auth_method = AuthMethod.API_KEY
+        elif auth_method == AuthMethod.AUTO:
+            auth_method = (AuthMethod.VERTEX_AI if not api_key and gcp_project
+                           else AuthMethod.API_KEY)
 
         # Handle image output directory
         output_dir = os.getenv("IMAGE_OUTPUT_DIR", "").strip()

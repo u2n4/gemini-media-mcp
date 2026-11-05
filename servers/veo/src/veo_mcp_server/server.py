@@ -21,9 +21,10 @@ import threading
 import uuid
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from typing import Optional, TypedDict
 
 from google import genai
+from google.genai import interactions
 from mcp.server.fastmcp import FastMCP
 
 from .core.validation import (
@@ -152,6 +153,10 @@ jobs: dict[str, dict] = {}
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+class _GenerationOptions(TypedDict, total=False):
+    generation_config: interactions.GenerationConfigParam
+
+
 def _ts() -> str:
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
@@ -186,7 +191,37 @@ def _load_image(image_path: str) -> dict:
             "mime_type": mime_types[p.suffix.lower()]}
 
 
-# NEW: Reference images support
+def _load_reference_images(reference_image_paths: str) -> list[dict]:
+    """Load the legacy comma-separated reference paths as Omni image parts."""
+    if not reference_image_paths.strip():
+        return []
+    paths = [p.strip() for p in reference_image_paths.split(",")]
+    if not 1 <= len(paths) <= 6 or not all(paths):
+        raise ValueError("reference_image_paths must contain 1 to 6 image paths")
+    return [_load_image(p) for p in paths]
+
+
+def _validate_duration(duration_seconds: int, maximum: int = 15) -> None:
+    if type(duration_seconds) is not int or not 3 <= duration_seconds <= maximum:
+        raise ValueError(f"duration_seconds must be an integer from 3 to {maximum}")
+
+
+def _start_job(prompt, model, resolution, output_path, prefix, job_type, generate_fn) -> str:
+    """Start a generation with the same job store, worker and download handling."""
+    if output_path:
+        validate_output_path(output_path)
+    _get_manager()
+    output_file = _resolve_output(output_path or None, prefix)
+    job_id = str(uuid.uuid4())
+    jobs[job_id] = {
+        "type": job_type, "status": "starting", "message": "Initializing...",
+        "prompt": prompt[:100], "model": model, "resolution": resolution,
+        "output_file": str(output_file), "started_at": datetime.now().isoformat(),
+    }
+    threading.Thread(target=_run_generation_job,
+                     args=(job_id, generate_fn, output_file), daemon=True).start()
+    return (f"Video generation started!\n  Job ID: {job_id}\n  Model: {model}\n"
+            f'Use veo_check_job(job_id="{job_id}") to check progress.')
 
 
 def _call_with_rotation(fn):
@@ -255,6 +290,11 @@ def _run_generation_job(job_id: str, generate_fn, output_file: Path):
         job["status"] = "generating"
         job["message"] = "Sending request to Gemini Omni Interactions API..."
         client, interaction = _call_with_rotation(generate_fn)
+        # Preserve Omni provenance for extension of inline and URI-delivered jobs.
+        if getattr(interaction, "id", None):
+            job["interaction_id"] = interaction.id
+        if interaction.output_video is not None and interaction.output_video.uri:
+            job["video_uri"] = interaction.output_video.uri
         job["status"] = "downloading"
         job["message"] = "Waiting for video processing and download..."
         saved_paths = _save_video(interaction, output_file, client)
@@ -290,19 +330,21 @@ def veo_generate_video(
     aspect_ratio: str = "16:9",
     duration_seconds: int = 10,
     output_path: str = "",
+    reference_image_paths: str = "",
 ) -> str:
     """Generate an Omni video; returns a job ID for veo_check_job.
 
     standard and fast are compatibility aliases for gemini-omni-1.2-flash.
     Duration is 3-15 seconds; resolution is 360p, 720p, 1080p or 4k.
+    reference_image_paths: Comma-separated paths to 1-6 subject reference images.
     """
     model = _get_model(model_tier)
     if resolution not in VALID_RESOLUTIONS:
         raise ValueError(f"resolution must be one of {VALID_RESOLUTIONS}")
     if aspect_ratio not in VALID_ASPECTS:
         raise ValueError(f"aspect_ratio must be one of {VALID_ASPECTS}")
-    if type(duration_seconds) is not int or duration_seconds not in VALID_DURATIONS:
-        raise ValueError("duration_seconds must be an integer from 3 to 15")
+    _validate_duration(duration_seconds)
+    references = _load_reference_images(reference_image_paths)
     if output_path:
         validate_output_path(output_path)
     _get_manager()  # Fail synchronously with a useful missing-key error.
@@ -316,11 +358,16 @@ def veo_generate_video(
 
     def generate_fn():
         client = _get_manager().client
+        options: _GenerationOptions = {}
+        if references:
+            options["generation_config"] = {"video_config": {"task": "reference_to_video"}}
         interaction = client.interactions.create(
-            model=model, input=prompt,
+            model=model,
+            input=references + [{"type": "text", "text": prompt}] if references else prompt,
             response_format={"type": "video", "duration": f"{duration_seconds}s",
                              "aspect_ratio": aspect_ratio, "resolution": resolution,
                              "delivery": "uri"},
+            **options,
         )
         return client, interaction
 
@@ -423,8 +470,7 @@ def veo_image_to_video(
         raise ValueError(f"resolution must be one of {VALID_RESOLUTIONS}")
     if aspect_ratio not in VALID_ASPECTS:
         raise ValueError(f"aspect_ratio must be one of {VALID_ASPECTS}")
-    if type(duration_seconds) is not int or duration_seconds not in VALID_DURATIONS:
-        raise ValueError("duration_seconds must be an integer from 3 to 15")
+    _validate_duration(duration_seconds)
     if output_path:
         validate_output_path(output_path)
     _get_manager()
@@ -450,6 +496,100 @@ def veo_image_to_video(
                      args=(job_id, generate_fn, output_file), daemon=True).start()
     return (f"Image-to-Video generation started!\n  Job ID: {job_id}\n  Model: {model}\n"
             f'Use veo_check_job(job_id="{job_id}") to check progress.')
+
+
+@mcp.tool(name="veo_extend_video")
+def veo_extend_video(
+    prompt: str,
+    source_job_id: str = "",
+    video_uri: str = "",
+    output_path: str = "",
+    duration_seconds: int = 10,
+) -> str:
+    """Extend an Omni video by 3-10 seconds (default 10), up to 30 seconds total.
+
+    Provide a completed source_job_id or a Gemini Files API video_uri.
+    Returns a job ID; poll with veo_check_job. Output resolution is 720p.
+    """
+    _validate_duration(duration_seconds, 10)
+    previous_id = ""
+    source_file = ""
+    if source_job_id:
+        if source_job_id not in jobs:
+            return f"Source job not found: {source_job_id}\nAvailable jobs: {list(jobs.keys())}"
+        source = jobs[source_job_id]
+        if source.get("status") != "completed":
+            return f"Source job is not completed yet (status: {source.get('status')}). Wait for it to finish."
+        previous_id = source.get("interaction_id", "")
+        video_uri = source.get("video_uri", "")
+        if not previous_id and not video_uri:
+            source_file = source.get("result_path", "")
+            if not source_file or not Path(source_file).is_file():
+                return "Source job has no interaction ID, video URI or local video file."
+    elif not video_uri:
+        return "Error: Must provide either source_job_id or video_uri."
+    if video_uri:
+        video_uri = validate_video_uri(video_uri)
+
+    def generate_fn():
+        client = _get_manager().client
+        parts = []
+        if not previous_id:
+            uri = video_uri
+            if source_file:
+                uploaded_uri = client.files.upload(file=source_file).uri
+                if not uploaded_uri:
+                    raise RuntimeError("Source video upload returned no URI.")
+                uri = validate_video_uri(uploaded_uri)
+            parts.append({"type": "video", "uri": uri})
+        parts.append({"type": "text", "text": prompt})
+        interaction = client.interactions.create(
+            model=MODELS["standard"], input=parts,
+            generation_config={"video_config": {"task": "extend"}},
+            response_format={"type": "video", "duration": f"{duration_seconds}s",
+                             "resolution": "720p", "delivery": "uri"},
+            **({"previous_interaction_id": previous_id} if previous_id else {}),
+        )
+        return client, interaction
+
+    return _start_job(prompt, MODELS["standard"], "720p", output_path,
+                      "ext", "extend-video", generate_fn)
+
+
+@mcp.tool(name="veo_interpolate_video")
+def veo_interpolate_video(
+    prompt: str,
+    first_frame_path: str,
+    last_frame_path: str,
+    model_tier: str = "standard",
+    resolution: str = "1080p",
+    output_path: str = "",
+    duration_seconds: int = 10,
+) -> str:
+    """Generate a 3-10 second transition between first and last frame images.
+
+    Images must be local JPEG, PNG or WebP files. Returns a job ID for veo_check_job.
+    standard and fast both select gemini-omni-1.2-flash.
+    """
+    _validate_duration(duration_seconds, 10)
+    model = _get_model(model_tier)
+    if resolution not in VALID_RESOLUTIONS:
+        raise ValueError(f"resolution must be one of {VALID_RESOLUTIONS}")
+    first = _load_image(first_frame_path)
+    last = _load_image(last_frame_path)
+
+    def generate_fn():
+        client = _get_manager().client
+        interaction = client.interactions.create(
+            model=model, input=[first, last, {"type": "text", "text": prompt}],
+            generation_config={"video_config": {"task": "image_to_video"}},
+            response_format={"type": "video", "duration": f"{duration_seconds}s",
+                             "resolution": resolution, "delivery": "uri"},
+        )
+        return client, interaction
+
+    return _start_job(prompt, model, resolution, output_path,
+                      "interp", "interpolate", generate_fn)
 
 
 @mcp.tool(name="veo_show_output_stats")

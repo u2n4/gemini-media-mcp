@@ -49,10 +49,43 @@ def test_missing_key_client_error():
         wrapper.generate_content(["test"])
 
 
-def test_missing_key_configuration_error(monkeypatch):
+def test_missing_key_configuration(monkeypatch):
     monkeypatch.setenv("NANOBANANA_AUTH_METHOD", "api_key")
-    with pytest.raises(ValueError, match="GEMINI_API_KEY"):
-        ServerConfig.from_env()
+    assert ServerConfig.from_env().auth_method == AuthMethod.API_KEY
+
+
+@pytest.mark.parametrize("factory", ["create_app", "create_wrapper_app"])
+@pytest.mark.parametrize("auth", ["auto", "api_key"])
+def test_keyless_startup_and_tool_errors(monkeypatch, tmp_path, factory, auth):
+    from nanobanana_mcp_server import server
+
+    monkeypatch.setenv("NANOBANANA_AUTH_METHOD", auth)
+    monkeypatch.setenv("IMAGE_OUTPUT_DIR", str(tmp_path / "images"))
+    monkeypatch.setenv("NANOBANANA_DB_PATH", ":memory:")
+    for key in ("GCP_PROJECT_ID", "GOOGLE_CLOUD_PROJECT"):
+        monkeypatch.delenv(key, raising=False)
+    app = getattr(server, factory)()
+    if factory == "create_wrapper_app":
+        app = app.server
+    image = tmp_path / "input.png"
+    Image.new("RGB", (8, 8), "blue").save(image)
+
+    async def check():
+        async with Client(app) as client:
+            assert {t.name for t in await client.list_tools()} == {
+                "generate_image", "upload_file", "show_output_stats", "maintenance",
+            }
+            for tier in ("flash", "pro"):
+                for inputs in ({}, {"input_image_path_1": str(image)}, {"file_id": "files/missing"}):
+                    result = await client.call_tool("generate_image", {
+                        "prompt": "A blue square", "model_tier": tier, **inputs,
+                    }, raise_on_error=False)
+                    assert result.is_error
+                    assert "GEMINI_API_KEY" in str(result.content)
+            result = await client.call_tool("upload_file", {"path": str(image)},
+                                            raise_on_error=False)
+            assert "GEMINI_API_KEY" in str(result.content)
+    asyncio.run(check())
 
 
 def test_mcp_tool_list():

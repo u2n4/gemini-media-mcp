@@ -11,9 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Keep background jobs; decode inline video or poll URI files until ACTIVE and download via SDK.
 - Support 3–15 seconds (default 10), 360p/720p/1080p/4k, and 16:9/9:16.
 - `standard` and `fast` remain compatibility aliases for the same Omni model.
-- Remove `veo_extend_video` and its video-object cache/expiry code.
-- Remove `veo_interpolate_video` and its first/last-frame request code.
-- Remove unconfirmed legacy seed, batch, negative-prompt and reference-image parameters.
+- Restore `veo_extend_video` on Omni with the `extend` task: accept a completed
+  source job or validated video URI; retain interaction IDs for multi-turn continuation.
+- Restore `veo_interpolate_video` with ordered first/last image parts and the
+  `image_to_video` task. Both restored tools enforce integer durations of 3–10 seconds.
+- Restore comma-separated `reference_image_paths` on `veo_generate_video`, using
+  up to 6 image parts and the `reference_to_video` task.
+- Leave legacy seed, batch and negative-prompt parameters unavailable: their
+  Omni video-specific behavior/request shape is not confirmed by the Omni docs.
+- Replace the legacy video-object cache/expiry handling with Omni interaction IDs,
+  video URIs and a local-result upload fallback for older completed jobs.
 - Remove old operations polling, destructive file cleanup and HTTP download fallbacks.
 - Missing credentials now raise an error naming GEMINI_API_KEY instead of exiting.
 - Cap MCP to `>=1.0.0,<2` and google-genai to `>=2.5.0,<3`; sync requirements.

@@ -73,7 +73,10 @@ Generated image metadata is tracked in a SQLite database.
 
 **Opt out of persistent storage** by setting `NANOBANANA_DB_PATH=:memory:`. This uses an in-memory database that is discarded when the server exits — useful for ephemeral or read-only environments. Trade-off: image history is lost on restart; the `show_output_stats` tool will show an empty database each session.
 
-The database and output directories are created lazily on first image generation — starting the server with no `GEMINI_API_KEY` set (e.g. `nanobanana-imagen-mcp --help`) does not create any files or directories.
+The database and output directories are created lazily on first use. The server
+starts and lists its four tools without credentials. Image generation and uploads
+require authentication; with no API key configured, they return a clear error
+naming `GEMINI_API_KEY`.
 
 ## Claude Desktop Configuration
 
