@@ -1,8 +1,8 @@
-# Publish VEO + NanoBanana to PyPI via OIDC Trusted Publisher
+# Publish Omni + NanoBanana to PyPI via OIDC Trusted Publisher
 #
 # Activation requirements (must be done BEFORE first tag push):
 #   1. PyPI Trusted Publisher entries registered at:
-#        https://pypi.org/manage/project/veo-mcp-server/settings/publishing/
+#        https://pypi.org/manage/project/omni-mcp-server/settings/publishing/
 #        https://pypi.org/manage/project/nanobanana-imagen-mcp/settings/publishing/
 #      For BOTH:
 #        - Owner: u2n4
@@ -13,7 +13,7 @@
 #        https://github.com/u2n4/gemini-media-mcp/settings/environments
 #
 # Triggers (per sub-package):
-#   - tag `veo-v*.*.*`               -> publishes servers/veo
+#   - tag `omni-v*.*.*`               -> publishes servers/omni
 #   - tag `nanobanana-imagen-v*.*.*` -> publishes servers/nanobanana
 
 name: Publish to PyPI
@@ -21,7 +21,7 @@ name: Publish to PyPI
 on:
   push:
     tags:
-      - "veo-v*.*.*"
+      - "omni-v*.*.*"
       - "nanobanana-imagen-v*.*.*"
 
 jobs:
@@ -31,7 +31,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        server: [veo, nanobanana]
+        server: [omni, nanobanana]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -44,9 +44,9 @@ jobs:
         working-directory: servers/${{ matrix.server }}
         run: env -u GEMINI_API_KEY -u GOOGLE_API_KEY -u GEMINI_API_KEY_BACKUP uv run --locked pytest tests -q
 
-  publish-veo:
+  publish-omni:
     needs: test
-    if: startsWith(github.ref, 'refs/tags/veo-v')
+    if: startsWith(github.ref, 'refs/tags/omni-v')
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -60,14 +60,14 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Build veo
-        working-directory: servers/veo
+      - name: Build omni
+        working-directory: servers/omni
         run: uv build
 
-      - name: Publish veo to PyPI (OIDC)
+      - name: Publish omni to PyPI (OIDC)
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: servers/veo/dist
+          packages-dir: servers/omni/dist
 
   publish-nanobanana:
     needs: test

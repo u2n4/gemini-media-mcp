@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import pytest
 from google.genai.interactions import CreateModelInteraction
 
-from veo_mcp_server import server as s
+from omni_mcp_server import server as s
 
 
 @pytest.fixture
@@ -39,7 +39,7 @@ def fake_client(monkeypatch):
 
 def test_text_request_and_completed_job(fake_client, tmp_path):
     target = tmp_path / "text.mp4"
-    message = s.veo_generate_video("A sunset", resolution="4k", duration_seconds=15,
+    message = s.omni_generate_video("A sunset", resolution="4k", duration_seconds=15,
                                    aspect_ratio="9:16", output_path=str(target))
     fake_client.interactions.create.assert_called_once_with(
         model="gemini-omni-1.2-flash", input="A sunset",
@@ -51,8 +51,8 @@ def test_text_request_and_completed_job(fake_client, tmp_path):
     assert job["status"] == "completed"
     assert job["result_paths"] == [str(target)]
     assert target.read_bytes() == b"fake-video"
-    assert "Video is ready!" in s.veo_check_job(jid)
-    assert "veo_extend_video" not in s.veo_check_job(jid)
+    assert "Video is ready!" in s.omni_check_job(jid)
+    assert "omni_extend_video" not in s.omni_check_job(jid)
 
 
 @pytest.mark.parametrize("suffix,mime", [(".jpg", "image/jpeg"), (".png", "image/png"),
@@ -60,7 +60,7 @@ def test_text_request_and_completed_job(fake_client, tmp_path):
 def test_image_input_and_default_duration(fake_client, tmp_path, suffix, mime):
     image = tmp_path / ("source" + suffix)
     image.write_bytes(b"fake-image")
-    s.veo_image_to_video("Animate", str(image), output_path=str(tmp_path / "image.mp4"))
+    s.omni_image_to_video("Animate", str(image), output_path=str(tmp_path / "image.mp4"))
     request = fake_client.interactions.create.call_args.kwargs
     assert request["input"] == [
         {"type": "image", "data": base64.b64encode(b"fake-image").decode(), "mime_type": mime},
@@ -76,7 +76,7 @@ def test_uri_poll_then_download(fake_client, tmp_path):
     fake_client.files.get.side_effect = [NS(state=NS(name="PROCESSING")), NS(state=NS(name="ACTIVE"))]
     fake_client.files.download.side_effect = lambda **kw: Path(kw["destination"]).write_bytes(b"downloaded")
     target = tmp_path / "uri.mp4"
-    s.veo_generate_video("A sunset", output_path=str(target))
+    s.omni_generate_video("A sunset", output_path=str(target))
     assert fake_client.files.get.call_count == 2
     fake_client.files.get.assert_called_with(name="files/video-id")
     fake_client.files.download.assert_called_once_with(file=uri, destination=str(target))
@@ -88,7 +88,7 @@ def test_processing_failure_marks_job_failed(fake_client, tmp_path):
     fake_client.interactions.create.return_value = NS(output_video=NS(
         data=None, uri="https://generativelanguage.googleapis.com/v1beta/files/failed"))
     fake_client.files.get.return_value = NS(state=NS(name="FAILED"))
-    s.veo_generate_video("fail", output_path=str(tmp_path / "failed.mp4"))
+    s.omni_generate_video("fail", output_path=str(tmp_path / "failed.mp4"))
     job = next(iter(s.jobs.values()))
     assert job["status"] == "failed"
     assert "FAILED" in job["error"]
@@ -108,20 +108,20 @@ def test_file_poll_timeout(fake_client, monkeypatch, tmp_path):
                                    NS(data="not base64!", uri=None)])
 def test_bad_output_is_an_error(fake_client, tmp_path, video):
     fake_client.interactions.create.return_value = NS(output_video=video)
-    s.veo_generate_video("bad output", output_path=str(tmp_path / "bad.mp4"))
+    s.omni_generate_video("bad output", output_path=str(tmp_path / "bad.mp4"))
     assert next(iter(s.jobs.values()))["status"] == "failed"
 
 
 def test_download_error_is_reported(fake_client, tmp_path):
     fake_client.interactions.create.side_effect = RuntimeError("fake API failure")
-    s.veo_generate_video("fail", output_path=str(tmp_path / "failed.mp4"))
+    s.omni_generate_video("fail", output_path=str(tmp_path / "failed.mp4"))
     assert next(iter(s.jobs.values()))["error"] == "fake API failure"
 
 
 @pytest.mark.parametrize("duration", [2, 16, 3.5, True])
 def test_invalid_duration(fake_client, duration):
     with pytest.raises(ValueError, match="duration_seconds"):
-        s.veo_generate_video("test", duration_seconds=duration)
+        s.omni_generate_video("test", duration_seconds=duration)
     fake_client.interactions.create.assert_not_called()
 
 
@@ -133,25 +133,25 @@ def test_missing_key(monkeypatch, tmp_path, tool):
     image.write_bytes(b"fake")
     with pytest.raises(RuntimeError, match="GEMINI_API_KEY"):
         if tool == "text":
-            s.veo_generate_video("test")
+            s.omni_generate_video("test")
         elif tool == "image":
-            s.veo_image_to_video("test", str(image))
+            s.omni_image_to_video("test", str(image))
         elif tool == "extend":
-            s.veo_extend_video("test", video_uri="https://generativelanguage.googleapis.com/v1beta/files/source")
+            s.omni_extend_video("test", video_uri="https://generativelanguage.googleapis.com/v1beta/files/source")
         elif tool == "interpolate":
-            s.veo_interpolate_video("test", str(image), str(image))
+            s.omni_interpolate_video("test", str(image), str(image))
         else:
-            s.veo_api_status()
+            s.omni_api_status()
 
 
 def test_mcp_tool_list():
     tools = asyncio.run(s.mcp.list_tools())
     assert {tool.name for tool in tools} == {
-        "veo_generate_video", "veo_image_to_video", "veo_check_job", "veo_list_jobs",
-        "veo_show_output_stats", "veo_pricing_info", "veo_api_status",
-        "veo_extend_video", "veo_interpolate_video",
+        "omni_generate_video", "omni_image_to_video", "omni_check_job", "omni_list_jobs",
+        "omni_show_output_stats", "omni_pricing_info", "omni_api_status",
+        "omni_extend_video", "omni_interpolate_video",
     }
-    schema = next(t for t in tools if t.name == "veo_generate_video").inputSchema
+    schema = next(t for t in tools if t.name == "omni_generate_video").inputSchema
     assert "seed" not in schema["properties"]
     assert schema["properties"]["duration_seconds"]["default"] == 10
     assert s._get_model("fast") == s._get_model("standard") == "gemini-omni-1.2-flash"
@@ -161,7 +161,7 @@ def test_mcp_tool_list():
 def test_extension_uri_request(fake_client, tmp_path, duration):
     uri = "https://generativelanguage.googleapis.com/v1beta/files/source"
     target = tmp_path / "extended.mp4"
-    message = s.veo_extend_video("Continue the scene", video_uri=uri,
+    message = s.omni_extend_video("Continue the scene", video_uri=uri,
                                  duration_seconds=duration, output_path=str(target))
     fake_client.interactions.create.assert_called_once_with(
         model="gemini-omni-1.2-flash",
@@ -180,11 +180,11 @@ def test_extension_uri_request(fake_client, tmp_path, duration):
 
 def test_extension_from_source_job(fake_client, tmp_path):
     fake_client.interactions.create.return_value.id = "interaction-source"
-    s.veo_generate_video("Start", output_path=str(tmp_path / "source.mp4"))
+    s.omni_generate_video("Start", output_path=str(tmp_path / "source.mp4"))
     source_id = next(iter(s.jobs))
     assert s.jobs[source_id]["interaction_id"] == "interaction-source"
     fake_client.interactions.create.reset_mock()
-    s.veo_extend_video("Continue", source_job_id=source_id,
+    s.omni_extend_video("Continue", source_job_id=source_id,
                        output_path=str(tmp_path / "extended.mp4"))
     request = fake_client.interactions.create.call_args.kwargs
     assert request["previous_interaction_id"] == "interaction-source"
@@ -200,7 +200,7 @@ def test_interpolation_request(fake_client, tmp_path, duration):
     first.write_bytes(b"first")
     last.write_bytes(b"last")
     target = tmp_path / "transition.mp4"
-    message = s.veo_interpolate_video("Transition", str(first), str(last),
+    message = s.omni_interpolate_video("Transition", str(first), str(last),
                                      duration_seconds=duration, output_path=str(target))
     fake_client.interactions.create.assert_called_once_with(
         model="gemini-omni-1.2-flash",
@@ -220,11 +220,11 @@ def test_interpolation_request(fake_client, tmp_path, duration):
     assert target.read_bytes() == b"fake-video"
 
 
-@pytest.mark.parametrize("tool", ["veo_extend_video", "veo_interpolate_video"])
+@pytest.mark.parametrize("tool", ["omni_extend_video", "omni_interpolate_video"])
 @pytest.mark.parametrize("duration", [2, 11, 15, 3.5, True])
 def test_restored_tool_duration_limit(fake_client, tool, duration):
     args = {"video_uri": "https://generativelanguage.googleapis.com/v1beta/files/source"}
-    if tool == "veo_interpolate_video":
+    if tool == "omni_interpolate_video":
         args = {"first_frame_path": "unused.png", "last_frame_path": "unused.png"}
     with pytest.raises(ValueError, match="duration_seconds must be an integer from 3 to 10"):
         getattr(s, tool)("test", duration_seconds=duration, **args)
@@ -236,7 +236,7 @@ def test_reference_images_request(fake_client, tmp_path):
     paths = [tmp_path / f"ref{i}.png" for i in range(6)]
     for path in paths:
         path.write_bytes(path.name.encode())
-    s.veo_generate_video("Use these subjects", reference_image_paths=",".join(map(str, paths)),
+    s.omni_generate_video("Use these subjects", reference_image_paths=",".join(map(str, paths)),
                          duration_seconds=15, output_path=str(tmp_path / "refs.mp4"))
     request = fake_client.interactions.create.call_args.kwargs
     assert request["input"] == [s._load_image(str(path)) for path in paths] + [
@@ -246,7 +246,7 @@ def test_reference_images_request(fake_client, tmp_path):
 
 def test_too_many_reference_images(fake_client):
     with pytest.raises(ValueError, match="1 to 6"):
-        s.veo_generate_video("test", reference_image_paths=",".join(["unused.png"] * 7))
+        s.omni_generate_video("test", reference_image_paths=",".join(["unused.png"] * 7))
     fake_client.interactions.create.assert_not_called()
 
 
@@ -262,7 +262,7 @@ def test_extension_older_source_job(fake_client, tmp_path, source_kind):
         source["result_path"] = str(local)
         fake_client.files.upload.return_value = NS(uri=uri)
     s.jobs["source"] = source
-    s.veo_extend_video("Continue", source_job_id="source",
+    s.omni_extend_video("Continue", source_job_id="source",
                        output_path=str(tmp_path / "extended.mp4"))
     request = fake_client.interactions.create.call_args.kwargs
     assert request["input"][0] == {"type": "video", "uri": uri}
@@ -278,23 +278,23 @@ def test_extension_older_source_job(fake_client, tmp_path, source_kind):
 def test_extension_unavailable_source(fake_client, source):
     if source is not None:
         s.jobs["source"] = source
-    assert "Source job" in s.veo_extend_video("Continue", source_job_id="source")
+    assert "Source job" in s.omni_extend_video("Continue", source_job_id="source")
     fake_client.interactions.create.assert_not_called()
 
 
 def test_restored_tools_validate_paths_and_uri(fake_client, tmp_path):
-    from veo_mcp_server.core.validation import ValidationError
+    from omni_mcp_server.core.validation import ValidationError
 
     with pytest.raises(ValidationError):
-        s.veo_extend_video("test", video_uri="https://169.254.169.254/metadata")
+        s.omni_extend_video("test", video_uri="https://169.254.169.254/metadata")
     with pytest.raises(ValidationError):
-        s.veo_extend_video("test", video_uri="https://generativelanguage.googleapis.com/v1beta/files/source",
+        s.omni_extend_video("test", video_uri="https://generativelanguage.googleapis.com/v1beta/files/source",
                            output_path=str(Path.home() / ".ssh" / "evil.mp4"))
     image = tmp_path / "image.png"
     image.write_bytes(b"fake")
     for first, last in [(str(image), "../../secret.png"), ("../../secret.png", str(image))]:
         with pytest.raises(ValidationError):
-            s.veo_interpolate_video("test", first, last)
+            s.omni_interpolate_video("test", first, last)
     with pytest.raises(ValidationError):
-        s.veo_generate_video("test", reference_image_paths="../../secret.png")
+        s.omni_generate_video("test", reference_image_paths="../../secret.png")
     fake_client.interactions.create.assert_not_called()

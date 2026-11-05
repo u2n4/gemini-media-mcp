@@ -2,17 +2,17 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "gemini-media-mcp",
   "version": "1.0.0",
-  "description": "All-in-one MCP toolkit for AI media generation -- VEO 3.1 video + NanoBanana Pro 2 images + prompting skills",
+  "description": "All-in-one MCP toolkit for AI media generation -- Gemini Omni video + NanoBanana Pro 2 images + prompting skills",
   "owner": {
     "name": "u2n4",
     "email": "u2n4@users.noreply.github.com"
   },
   "plugins": [
     {
-      "name": "veo-prompting",
-      "description": "Professional VEO 3.1 video prompt engineering skill with 7-layer system",
-      "version": "1.0.0",
-      "source": "./plugins/veo-prompting",
+      "name": "omni-prompting",
+      "description": "Prompt planning for Gemini Omni video tools and supported controls",
+      "version": "2.0.0",
+      "source": "./plugins/omni-prompting",
       "category": "development"
     },
     {

@@ -17,10 +17,10 @@ Thank you for your interest in contributing! This guide will help you get starte
 
 ## Development Setup
 
-### VEO Server
+### Omni Server
 
 ```bash
-cd servers/veo
+cd servers/omni
 pip install -r requirements.txt
 ```
 
@@ -50,7 +50,7 @@ Use conventional commit format:
 ```
 feat: add new video resolution option
 fix: handle API timeout gracefully
-docs: update VEO tool parameter descriptions
+docs: update Omni tool parameter descriptions
 refactor: extract download logic into helper
 test: add unit tests for key rotation
 ```
@@ -59,7 +59,7 @@ test: add unit tests for key rotation
 
 1. Ensure your code follows the style guidelines above.
 2. Update documentation if you changed any tool parameters or behavior.
-3. Test your changes with a real Gemini API key if possible.
+3. Run offline tests with GEMINI_API_KEY, GOOGLE_API_KEY and GEMINI_API_KEY_BACKUP unset; tests use fake clients and block network calls.
 4. Write a clear PR description explaining what changed and why.
 5. Reference any related issues.
 
@@ -68,17 +68,17 @@ test: add unit tests for key rotation
 ```
 gemini-media-mcp/
 ├── servers/
-│   ├── veo/               # VEO 3.1 MCP Server
-│   │   ├── server.py      # Main server code
+│   ├── omni/               # Gemini Omni MCP Server
+│   │   ├── src/omni_mcp_server/server.py  # Main server code
 │   │   └── requirements.txt
 │   └── nanobanana/         # NanoBanana MCP Server
 │       ├── nanobanana_mcp_server/  # Package
 │       └── requirements.txt
 ├── skills/                 # Prompting skills (source of truth)
-│   ├── veo-prompting/
+│   ├── omni-prompting/
 │   └── nanobanana-prompting/
 ├── plugins/                # Claude Code Plugin Marketplace packages
-│   ├── veo-prompting/
+│   ├── omni-prompting/
 │   └── nanobanana-prompting/
 └── .claude-plugin/         # Marketplace manifest
 ```
@@ -88,7 +88,7 @@ gemini-media-mcp/
 - Use GitHub Issues to report bugs or request features.
 - Include steps to reproduce for bugs.
 - Include error messages and log output when applicable.
-- Specify which server (VEO or NanoBanana) is affected.
+- Specify which server (Omni or NanoBanana) is affected.
 
 ## Security
 

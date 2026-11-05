@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# cold-install-smoke.sh — release gate for veo-mcp-server and nanobanana-imagen-mcp
+# cold-install-smoke.sh — release gate for omni-mcp-server and nanobanana-imagen-mcp
 #
 # Usage:
 #   bash scripts/cold-install-smoke.sh
@@ -9,23 +9,24 @@
 #   2. Create a fresh virtual environment
 #   3. pip install --no-cache-dir <wheel>
 #   4. pip install twine && twine check dist/*
-#   5. python -c "import <module>; assert <module>.__version__ == '1.1.1'"
+#   5. python -c "import <module>; assert <module>.__version__ matches the package version"
 #   6. Run <entry-point> --version
 #   7. Run <entry-point> --help
-#   8. Assert no home-directory pollution (~/veo-videos, ~/nanobanana-images)
+#   8. Assert no home-directory pollution (~/omni-videos, ~/nanobanana-images)
 #
 # Exit code 0 = all checks passed.  Non-zero = failure (check stderr).
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-EXPECTED_VERSION="1.1.1"
+unset GEMINI_API_KEY GOOGLE_API_KEY GEMINI_API_KEY_BACKUP
+export PYTHON_DOTENV_DISABLED=1
 
 # Use a temporary home to detect home-dir pollution
 FAKE_HOME="$(mktemp -d)"
 trap 'rm -rf "$FAKE_HOME"' EXIT
 
-echo "=== Cold-install smoke test v${EXPECTED_VERSION} ==="
+echo "=== Cold-install smoke test ==="
 echo "    Repo:      $REPO_ROOT"
 echo "    Fake home: $FAKE_HOME"
 echo ""
@@ -33,11 +34,12 @@ echo ""
 # ── Helper ────────────────────────────────────────────────────────────────────
 
 smoke_package() {
-    local pkg_dir="$1"         # e.g. servers/veo
-    local dist_name="$2"       # e.g. veo-mcp-server
-    local module_name="$3"     # e.g. veo_mcp_server
-    local entry_point="$4"     # e.g. veo-mcp-server
-    local home_marker="$5"     # e.g. veo-videos (checked under FAKE_HOME)
+    local pkg_dir="$1"         # e.g. servers/omni
+    local dist_name="$2"       # e.g. omni-mcp-server
+    local module_name="$3"     # e.g. omni_mcp_server
+    local entry_point="$4"     # e.g. omni-mcp-server
+    local expected_version="$6"
+    local home_marker="$5"     # e.g. omni-videos (checked under FAKE_HOME)
 
     echo "──────────────────────────────────────────────────"
     echo "  Package : $dist_name"
@@ -77,11 +79,11 @@ smoke_package() {
     fi
 
     # 5. Version assertion
-    echo "[5/8] Asserting __version__ == '$EXPECTED_VERSION' ..."
+    echo "[5/8] Asserting __version__ == '$expected_version' ..."
     HOME="$FAKE_HOME" "$VENV_PYTHON" -c "
 import $module_name
 v = $module_name.__version__
-assert v == '$EXPECTED_VERSION', f'__version__ is {v!r}, expected $EXPECTED_VERSION'
+assert v == '$expected_version', f'__version__ is {v!r}, expected $expected_version'
 print('    __version__ OK:', v)
 "
 
@@ -112,17 +114,19 @@ print('    __version__ OK:', v)
 # ── Run for both packages ─────────────────────────────────────────────────────
 
 smoke_package \
-    "servers/veo" \
-    "veo-mcp-server" \
-    "veo_mcp_server" \
-    "veo-mcp-server" \
-    "veo-videos"
+    "servers/omni" \
+    "omni-mcp-server" \
+    "omni_mcp_server" \
+    "omni-mcp-server" \
+    "omni-videos" \
+    "2.0.0"
 
 smoke_package \
     "servers/nanobanana" \
     "nanobanana-imagen-mcp" \
     "nanobanana_mcp_server" \
     "nanobanana-imagen-mcp" \
-    "nanobanana-images"
+    "nanobanana-images" \
+    "1.2.0"
 
-echo "=== All cold-install smoke tests passed for v${EXPECTED_VERSION} ==="
+echo "=== All cold-install smoke tests passed ==="

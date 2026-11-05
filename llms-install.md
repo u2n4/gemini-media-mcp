@@ -5,12 +5,12 @@
 - Python 3.10 or higher
 - A Google Gemini API key (get one at https://aistudio.google.com/apikey)
 
-## VEO 3.1 Server
+## Gemini Omni Server
 
 ### Install dependencies
 
 ```bash
-pip install google-genai mcp httpx
+pip install omni-mcp-server
 ```
 
 ### Configure for Claude Desktop
@@ -20,9 +20,9 @@ Add to your Claude Desktop configuration file:
 ```json
 {
   "mcpServers": {
-    "veo": {
-      "command": "python",
-      "args": ["/absolute/path/to/gemini-media-mcp/servers/veo/server.py"],
+    "omni": {
+      "command": "uvx",
+      "args": ["omni-mcp-server"],
       "env": {
         "GEMINI_API_KEY": "your_gemini_api_key",
         "VIDEO_OUTPUT_DIR": "./videos"
@@ -35,7 +35,7 @@ Add to your Claude Desktop configuration file:
 ### Configure for Claude Code
 
 ```bash
-claude mcp add veo -- python /absolute/path/to/gemini-media-mcp/servers/veo/server.py
+claude mcp add omni -- uvx omni-mcp-server
 ```
 
 Set environment variables:
@@ -98,15 +98,15 @@ Configure for Claude Desktop:
 /plugin marketplace add u2n4/gemini-media-mcp
 ```
 
-This installs both the VEO Prompting and NanoBanana Prompting skills.
+This installs both the Omni Prompting and NanoBanana Prompting skills.
 
 ### Manual Installation
 
 Copy the skill files to your Claude Code skills directory:
 
 ```bash
-# VEO Prompting
-cp skills/veo-prompting/SKILL.md ~/.claude/skills/veo-prompting/SKILL.md
+# Omni Prompting
+cp skills/omni-prompting/SKILL.md ~/.claude/skills/omni-prompting/SKILL.md
 
 # NanoBanana Prompting
 cp skills/nanobanana-prompting/SKILL.md ~/.claude/skills/nanobanana-prompting/SKILL.md
@@ -118,11 +118,11 @@ cp skills/nanobanana-prompting/SKILL.md ~/.claude/skills/nanobanana-prompting/SK
 |----------|----------|-------------|
 | `GEMINI_API_KEY` | Yes | Your Google Gemini API key |
 | `GEMINI_API_KEY_BACKUP` | No | Backup API key for automatic rotation |
-| `VIDEO_OUTPUT_DIR` | No | Directory for VEO video output (default: ~/veo-videos) |
+| `VIDEO_OUTPUT_DIR` | No | Directory for Omni video output (default: ~/omni-videos) |
 
 ## Verification
 
 After setup, verify the servers are working:
 
-1. **VEO**: Ask Claude to run `veo_api_status` -- it should show your key configuration.
+1. **Omni**: Ask Claude to run `omni_api_status` -- it should show your key configuration.
 2. **NanoBanana**: Ask Claude to run `show_output_stats` -- it should show the output directory.

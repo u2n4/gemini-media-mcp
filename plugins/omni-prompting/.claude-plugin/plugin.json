@@ -1,0 +1,9 @@
+{
+  "name": "omni-prompting",
+  "version": "2.0.0",
+  "description": "Prompt planning for Gemini Omni video tools and supported controls",
+  "author": {
+    "name": "u2n4",
+    "email": "u2n4@users.noreply.github.com"
+  }
+}
