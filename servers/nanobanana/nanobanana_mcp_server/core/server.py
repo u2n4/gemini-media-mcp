@@ -65,7 +65,9 @@ class NanoBananaMCP:
 
     def run(self):
         """Start the server."""
-        if self.config.transport == "http":
-            self.server.run(transport="http", host=self.config.host, port=self.config.port)
-        else:
+        if self.config.transport in ("http", "sse"):
+            self.server.run(transport=self.config.transport, host=self.config.host, port=self.config.port)
+        elif self.config.transport == "stdio":
             self.server.run()
+        else:
+            raise ValueError("FASTMCP_TRANSPORT must be stdio, http or sse")

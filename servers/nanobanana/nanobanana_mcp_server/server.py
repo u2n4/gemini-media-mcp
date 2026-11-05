@@ -116,8 +116,10 @@ def main():
         action="version",
         version=f"%(prog)s {__version__}",
     )
-    # parse_known_args so FastMCP transport args pass through unchanged
-    _known, _remaining = parser.parse_known_args()
+    parser.add_argument("--transport", choices=("stdio", "http", "sse"))
+    parser.add_argument("--host")
+    parser.add_argument("--port", type=int)
+    args = parser.parse_args()
 
     # Set up logging first
     log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -133,6 +135,10 @@ def main():
 
         # Create and run application wrapper
         app = create_wrapper_app()
+        for name in ("transport", "host", "port"):
+            value = getattr(args, name)
+            if value is not None:
+                setattr(app.config, name, value)
         logger.info("Application initialized successfully")
 
         # Start the server

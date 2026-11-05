@@ -98,8 +98,16 @@ class MaintenanceService:
             for ext in ["*.jpg", "*.jpeg", "*.png", "*.webp"]:
                 image_files.extend(Path(self.out_dir).glob(f"**/{ext}"))
 
-            # Sort by modification time (newest first)
-            image_files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+            candidates = []
+            for path in image_files:
+                if path.stem.endswith("_thumb"):
+                    continue
+                try:
+                    candidates.append((path, path.stat()))
+                except OSError as exc:
+                    stats["errors"].append(f"Cannot stat {path}: {exc}")
+            candidates.sort(key=lambda item: item[1].st_mtime, reverse=True)
+            image_files = [path for path, _ in candidates]
             stats["total_files"] = len(image_files)
 
             # Cutoff time for old files
@@ -131,15 +139,12 @@ class MaintenanceService:
                     # File is eligible for removal
                     file_size = file_stat.st_size
 
+                    thumb_path = file_path.with_name(file_path.stem + "_thumb.jpeg")
+                    if thumb_path.exists():
+                        file_size += thumb_path.stat().st_size
                     if not dry_run:
                         file_path.unlink()
-
-                        # Also remove corresponding thumbnail if it exists
-                        thumb_path = file_path.with_name(file_path.stem + "_thumb.jpeg")
-                        if thumb_path.exists():
-                            thumb_size = thumb_path.stat().st_size
-                            thumb_path.unlink()
-                            file_size += thumb_size
+                        thumb_path.unlink(missing_ok=True)
 
                     removed_count += 1
                     freed_bytes += file_size
@@ -223,13 +228,7 @@ class MaintenanceService:
             stats["total_records"] = db_stats["total_images"]
 
             # Clean up records for missing files
-            if not dry_run:
-                missing_count = self.db_service.cleanup_missing_files()
-                stats["missing_files_removed"] = missing_count
-            else:
-                # Simulate cleanup to get count
-                # This would require a dry_run parameter in cleanup_missing_files
-                stats["missing_files_removed"] = 0  # Would need to implement dry run
+            stats["missing_files_removed"] = self.db_service.cleanup_missing_files(dry_run=dry_run)
 
             # Check for other inconsistencies (could be expanded)
             stats["broken_references_fixed"] = 0

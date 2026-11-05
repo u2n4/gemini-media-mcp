@@ -11,14 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         server: [omni, nanobanana]
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v10.3.3
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -28,16 +28,17 @@ jobs:
 
       - name: Lint with ruff correctness rules (hard gate)
         working-directory: servers/${{ matrix.server }}
-        # `uv run --with X` creates an ephemeral venv with the project's
-        # dependencies plus the named tool, so imports resolve correctly.
-        run: uv run --with ruff ruff check --select E4,E7,E9,F .
+        run: uv run --locked ruff check --select E4,E7,E9,F .
 
       - name: Type check with pyright
         working-directory: servers/${{ matrix.server }}
-        # 2026-11-05: omni has 0 errors; nanobanana has 62 legacy type errors.
+        # Omni typing is a hard gate; NanoBanana retains a separate legacy typing backlog.
         # Keep only nanobanana nonblocking until its dedicated typing cleanup.
-        run: uv run --with pyright pyright .
+        run: uv run --locked pyright .
         continue-on-error: ${{ matrix.server == 'nanobanana' }}
+
+      - name: Cold uvx startup and tools/list (no credentials)
+        run: python scripts/check-stdio.py ${{ matrix.server }} --python ${{ matrix.python-version }}
 
       - name: Build wheel + sdist
         working-directory: servers/${{ matrix.server }}
@@ -45,7 +46,7 @@ jobs:
 
       - name: Upload build artifacts
         if: matrix.python-version == '3.12'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: dist-${{ matrix.server }}
           path: servers/${{ matrix.server }}/dist/

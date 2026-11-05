@@ -31,7 +31,10 @@ cd servers/nanobanana
 pip install -r requirements.txt
 ```
 
-Both servers require a `GEMINI_API_KEY` environment variable. Copy `.env.example` to `.env` and fill in your key.
+Generation requires `GEMINI_API_KEY` in the server process environment. Set it in
+your shell or MCP client configuration; discovery and offline tests need no key.
+`.env.example` lists the settings, but copying it alone does not export variables
+for Omni. NanoBanana also supports loading a `.env` file.
 
 ## Making Changes
 

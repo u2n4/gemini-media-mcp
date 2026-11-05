@@ -23,7 +23,8 @@ def register_maintenance_tool(server: FastMCP):
     @server.tool(
         annotations={
             "title": "Maintenance and cleanup operations",
-            "readOnlyHint": True,
+            "readOnlyHint": False,
+            "destructiveHint": True,
             "openWorldHint": True,
         }
     )

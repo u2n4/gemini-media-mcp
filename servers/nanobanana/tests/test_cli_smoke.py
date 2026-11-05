@@ -24,6 +24,7 @@ def _base_env(tmp_path) -> dict:
     env = {
         "IMAGE_OUTPUT_DIR": str(tmp_path / "nanobanana-images"),
         "PATH": os.environ.get("PATH", ""),
+        "PYTHON_DOTENV_DISABLED": "1",
     }
     # Windows requires these for subprocess to work correctly
     for key in (
@@ -141,12 +142,13 @@ def test_no_home_pollution(tmp_path):
     # No IMAGE_OUTPUT_DIR so it would default to ~/nanobanana-images if eager
     env.pop("IMAGE_OUTPUT_DIR", None)
 
-    subprocess.run(
+    result = subprocess.run(
         [sys.executable, "-c", "import nanobanana_mcp_server"],
         env=env,
         capture_output=True,
         timeout=30,
     )
+    assert result.returncode == 0, result.stderr
 
     nano_images = fake_home / "nanobanana-images"
     assert not nano_images.exists(), (

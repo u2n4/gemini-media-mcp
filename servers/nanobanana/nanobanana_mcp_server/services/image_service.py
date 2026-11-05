@@ -124,6 +124,8 @@ class ImageService:
                                 thumbnail_bytes = base64.b64decode(thumbnail_b64)
                                 thumbnail_image = MCPImage(data=thumbnail_bytes, format="jpeg")
                                 all_images.append(thumbnail_image)
+                            else:
+                                all_images.append(MCPImage(data=image_bytes, format=self.config.default_image_format))
 
                             # Enhanced metadata with resource links
                             metadata = {
@@ -165,8 +167,7 @@ class ImageService:
 
                 except Exception as e:
                     self.logger.error(f"Failed to generate image {i + 1}: {e}")
-                    # Continue with other images rather than failing completely
-                    continue
+                    raise
 
             progress.update(90, f"Successfully generated {len(all_images)} image(s)")
 
@@ -246,12 +247,7 @@ class ImageService:
                             image_bytes, f"image/{self.config.default_image_format}", edit_metadata
                         )
 
-                        # Create thumbnail MCP image for preview
-                        thumbnail_b64 = self.storage_service.get_thumbnail_base64(stored_info.id)
-                        if thumbnail_b64:
-                            thumbnail_bytes = base64.b64decode(thumbnail_b64)
-                            thumbnail_image = MCPImage(data=thumbnail_bytes, format="jpeg")
-                            mcp_images.append(thumbnail_image)
+                        mcp_images.append(MCPImage(data=image_bytes, format=self.config.default_image_format))
 
                         self.logger.info(
                             f"Stored edited image {i + 1} as {stored_info.id} "

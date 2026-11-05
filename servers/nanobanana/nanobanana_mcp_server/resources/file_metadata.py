@@ -34,5 +34,5 @@ def register_file_metadata_resource(server: FastMCP):
             logger.error(f"File operation error in file_metadata: {e}")
             return {"error": "file_operation_error", "message": str(e), "name": name}
         except Exception as e:
-            logger.error(f"Unexpected error in file_metadata: {e}")
+            logger.exception("Unexpected error in file_metadata")
             return {"error": "unexpected_error", "message": str(e), "name": name}

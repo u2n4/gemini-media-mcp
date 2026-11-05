@@ -151,7 +151,7 @@ def test_mcp_tool_list():
         "omni_show_output_stats", "omni_pricing_info", "omni_api_status",
         "omni_extend_video", "omni_interpolate_video",
     }
-    schema = next(t for t in tools if t.name == "omni_generate_video").inputSchema
+    schema = next(t for t in tools if t.name == "omni_generate_video").input_schema
     assert "seed" not in schema["properties"]
     assert schema["properties"]["duration_seconds"]["default"] == 10
     assert s._get_model("fast") == s._get_model("standard") == "gemini-omni-1.2-flash"

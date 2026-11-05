@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.33.0,<2"]
 build-backend = "hatchling.build"
 
 [project]
@@ -25,13 +25,15 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Multimedia :: Video",
 ]
 dependencies = [
-    "mcp>=1.0.0,<2",
-    "google-genai>=2.5.0,<3",
-    "httpx>=0.24.0",
-    "python-dotenv>=1.0.0",
+    "mcp>=2.3.0,<3",
+    "google-genai>=2.33.0,<3; python_version < '3.11'",
+    "google-genai>=2.34.0,<3; python_version >= '3.11'",
+    "httpx>=0.28.1,<1",
+    "python-dotenv>=1.2.4,<2",
 ]
 
 [project.urls]
@@ -46,5 +48,7 @@ packages = ["src/omni_mcp_server"]
 
 [dependency-groups]
 dev = [
-    "pytest>=9.2.0",
+    "pytest>=9.2.0,<10",
+    "ruff>=0.17.4,<0.18",
+    "pyright>=1.1.414,<2",
 ]

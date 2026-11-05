@@ -16,7 +16,15 @@
       "version": "2.0.0",
       "transport": {
         "type": "stdio"
-      }
+      },
+      "environmentVariables": [
+        {
+          "name": "GEMINI_API_KEY",
+          "description": "Gemini API key from Google AI Studio; required for generation, optional for discovery.",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
     }
   ]
 }

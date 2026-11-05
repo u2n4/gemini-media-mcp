@@ -17,6 +17,7 @@ from ..utils.image_utils import validate_image_format
 from ..config.settings import GeminiConfig, ServerConfig
 from ..core.progress_tracker import ProgressContext
 from ..core.exceptions import AuthenticationError
+from ..core.exceptions import ValidationError
 
 
 class FileImageService:
@@ -49,17 +50,27 @@ class FileImageService:
 
     def _get_next_filename(self, extension: str = "png") -> str:
         """Get the next available filename with counter."""
+        if extension not in {"png", "jpg", "jpeg", "webp", "gif"}:
+            raise ValidationError("Unsupported output image extension")
         self._ensure_output_dir()
         counter = 1
         while True:
             filename = self._generate_filename(extension, counter)
-            if not (self.output_dir / filename).exists():
+            try:
+                (self.output_dir / filename).touch(exist_ok=False)
                 return filename
+            except FileExistsError:
+                pass
             counter += 1
             if counter > 999:  # Safety limit
                 # Fallback to microsecond precision
                 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
-                return f"{timestamp}.{extension}"
+                filename = f"{timestamp}.{extension}"
+                try:
+                    (self.output_dir / filename).touch(exist_ok=False)
+                    return filename
+                except FileExistsError:
+                    continue
 
     def _generate_thumbnail(self, image_bytes: bytes) -> Tuple[bytes, int, int]:
         """Generate a small thumbnail from image bytes."""
@@ -69,7 +80,9 @@ class FileImageService:
 
             # Convert to RGB if needed (for JPEG compatibility)
             if image.mode in ("RGBA", "LA", "P"):
-                image = image.convert("RGB")
+                rgba = image.convert("RGBA")
+                image = PILImage.new("RGB", rgba.size, "white")
+                image.paste(rgba, mask=rgba.getchannel("A"))
 
             # Calculate thumbnail size preserving aspect ratio
             image.thumbnail(self.thumbnail_max_size, PILImage.Resampling.LANCZOS)
@@ -207,8 +220,7 @@ class FileImageService:
                     raise
                 except Exception as e:
                     self.logger.error(f"Failed to generate image {i + 1}: {e}")
-                    # Continue with other images rather than failing completely
-                    continue
+                    raise
 
             progress.update(90, f"Successfully generated {len(thumbnail_images)} image(s)")
             progress.update(

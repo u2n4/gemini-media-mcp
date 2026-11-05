@@ -49,34 +49,35 @@ smoke_package() {
 
     # 1. Build wheel
     echo "[1/8] Building wheel..."
-    uv build --wheel --out-dir dist/
-    WHEEL="$(ls dist/*.whl | tail -1)"
+    local package_tmp="$FAKE_HOME/$dist_name"
+    mkdir -p "$package_tmp/dist"
+    uv build --wheel --out-dir "$package_tmp/dist"
+    local wheels=("$package_tmp"/dist/*.whl)
+    [ "${#wheels[@]}" -eq 1 ] && [ -f "${wheels[0]}" ]
+    WHEEL="${wheels[0]}"
     echo "      Built: $WHEEL"
 
     # 4a. twine check (before install, just needs the wheel file)
     echo "[4a/8] twine check..."
-    pip install --quiet twine
-    twine check "$WHEEL"
+    uvx --from 'twine==7.0.0' twine check "$WHEEL"
     echo "      twine check passed"
 
     # 2. Fresh venv
-    VENV_DIR="$(mktemp -d)"
+    VENV_DIR="$package_tmp/venv"
     echo "[2/8] Creating fresh venv at $VENV_DIR ..."
     python -m venv "$VENV_DIR"
 
     # 3. Install wheel
     echo "[3/8] Installing wheel (no-cache)..."
-    "$VENV_DIR/bin/pip" install --no-cache-dir --quiet "$WHEEL" 2>/dev/null \
-        || "$VENV_DIR/Scripts/pip" install --no-cache-dir --quiet "$WHEEL"
-
     # Detect pip/python path (cross-platform: bin/ on Unix, Scripts/ on Windows)
     if [ -f "$VENV_DIR/bin/python" ]; then
         VENV_PYTHON="$VENV_DIR/bin/python"
         VENV_ENTRY="$VENV_DIR/bin/$entry_point"
     else
-        VENV_PYTHON="$VENV_DIR/Scripts/python"
-        VENV_ENTRY="$VENV_DIR/Scripts/$entry_point"
+        VENV_PYTHON="$VENV_DIR/Scripts/python.exe"
+        VENV_ENTRY="$VENV_DIR/Scripts/$entry_point.exe"
     fi
+    "$VENV_PYTHON" -m pip install --no-cache-dir --quiet "$WHEEL"
 
     # 5. Version assertion
     echo "[5/8] Asserting __version__ == '$expected_version' ..."
@@ -103,8 +104,7 @@ print('    __version__ OK:', v)
     fi
     echo "      No home-dir pollution detected."
 
-    # Cleanup venv
-    rm -rf "$VENV_DIR"
+    # The EXIT trap cleans the package's wheel and venv even on failure.
 
     echo "  PASSED: $dist_name"
     echo ""

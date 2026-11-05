@@ -16,6 +16,7 @@ from google.genai import types as gx
 from .gemini_client import GeminiClient
 from .image_database_service import ImageDatabaseService, ImageRecord
 from ..core.exceptions import AuthenticationError, FileOperationError
+from ..core.validation import validate_file_path
 
 
 class FilesAPIService:
@@ -52,9 +53,7 @@ class FilesAPIService:
         try:
             self.logger.info(f"Uploading {file_path} to Files API")
 
-            # Validate file exists
-            if not os.path.exists(file_path):
-                raise FileOperationError(f"File not found: {file_path}")
+            file_path = str(validate_file_path(file_path))
 
             # Upload to Files API
             file_obj = self.gemini_client.upload_file(file_path, display_name)
@@ -70,7 +69,7 @@ class FilesAPIService:
                     record_id, file_id, file_uri, expires_at
                 )
                 if not success:
-                    self.logger.warning(f"Could not update database record {record_id}")
+                    raise FileOperationError(f"Could not update database record {record_id}")
 
             self.logger.info(
                 f"Successfully uploaded {file_path} -> {file_id} (expires: {expires_at})"
@@ -110,6 +109,9 @@ class FilesAPIService:
 
                 # Check if file is still valid (not expired or in error state)
                 file_state = getattr(file_obj, "state", "ACTIVE")
+                file_state = getattr(file_state, "name", file_state)
+                if file_state == "PROCESSING":
+                    raise FileOperationError(f"File is still processing: {file_id}; retry later")
                 if file_state == "ACTIVE":
                     # File is still valid
                     record = self.db_service.get_by_file_id(file_id)
@@ -117,7 +119,7 @@ class FilesAPIService:
                 else:
                     self.logger.info(f"File {file_id} is in state: {file_state}")
 
-            except AuthenticationError:
+            except (AuthenticationError, FileOperationError):
                 raise
             except Exception as api_error:
                 self.logger.info(f"Files API error for {file_id}: {api_error}")
@@ -142,7 +144,7 @@ class FilesAPIService:
             )
             return None, record
 
-        except AuthenticationError:
+        except (AuthenticationError, FileOperationError):
             raise
         except Exception as e:
             self.logger.error(f"Error in get_file_with_fallback for {file_id}: {e}")
@@ -208,8 +210,10 @@ class FilesAPIService:
             # Get record for mime_type
             record = self.db_service.get_by_file_id(current_file_id)
             if not record:
-                # Fallback to default mime type
-                mime_type = "image/jpeg"
+                file_obj = self.gemini_client.get_file_metadata(current_file_id)
+                mime_type = file_obj.mime_type
+                if not mime_type:
+                    raise FileOperationError("Files API returned no MIME type")
             else:
                 mime_type = record.mime_type
 

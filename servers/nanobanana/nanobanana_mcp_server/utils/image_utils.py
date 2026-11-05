@@ -100,7 +100,7 @@ def convert_image_format(image_b64: str, target_format: str = "PNG") -> str:
             if image.mode == "RGBA":
                 background.paste(image, mask=image.split()[-1])  # Use alpha channel as mask
             else:
-                background.paste(image)
+                background.paste(image.convert("RGBA"), mask=image.getchannel("A"))
             image = background
 
         output = BytesIO()

@@ -63,7 +63,7 @@ class ModelSelector:
             tier = self._auto_select(prompt, **kwargs)
             service = self.pro_service if tier == ModelTier.PRO else self.flash_service
             self.logger.info(
-                f"Auto-selected {tier.value.upper()} model for prompt: '{prompt[:50]}...'"
+                f"Auto-selected {tier.value.upper()} model (prompt length={len(prompt)})"
             )
             return service, tier
 

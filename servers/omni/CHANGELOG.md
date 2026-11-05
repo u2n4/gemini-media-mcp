@@ -1,5 +1,22 @@
 # Changelog
 
+## [Unreleased] — 2026-11-06
+
+- Upgrade MCP to 2.3.0 and use its documented MCPServer API; preserve all nine
+  omni_* tool names and update the SDK tool-schema test accessor.
+- Upgrade all dependencies and the lockfile; synchronize bounded requirements.
+  Use google-genai 2.34.0 on Python 3.11+, retaining 2.33.0 on Python 3.10.
+- Reject Windows device paths, normalize doubled POSIX roots, protect credential
+  paths after resolution, and match allowed video URI hosts as well as prefixes.
+- Revalidate the actual video destination at save time and try every remaining
+  API key on quota failures; propagate non-quota errors without rotation.
+- Reject unknown CLI flags instead of silently discarding them; strengthen CLI
+  smoke tests to check import completion and absent-key/default-output behavior.
+- Add optional secret API-key metadata to the MCP Registry manifest.
+- Add Python 3.14 CI, current released Actions and clean uvx initialize/tools-list
+  checks. Test both Python 3.10 and 3.14 without credentials or live Gemini calls.
+
+
 All notable changes to `omni-mcp-server` are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
