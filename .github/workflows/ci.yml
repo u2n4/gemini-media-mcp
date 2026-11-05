@@ -22,20 +22,22 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Lint with ruff (hard gate)
+      - name: Offline tests (fake Gemini clients only)
+        working-directory: servers/${{ matrix.server }}
+        run: env -u GEMINI_API_KEY -u GOOGLE_API_KEY -u GEMINI_API_KEY_BACKUP uv run --locked pytest tests -q
+
+      - name: Lint with ruff correctness rules (hard gate)
         working-directory: servers/${{ matrix.server }}
         # `uv run --with X` creates an ephemeral venv with the project's
         # dependencies plus the named tool, so imports resolve correctly.
-        run: uv run --with ruff ruff check .
+        run: uv run --with ruff ruff check --select E4,E7,E9,F .
 
-      - name: Type check with pyright (soft — pre-existing errors, not a launch blocker)
+      - name: Type check with pyright
         working-directory: servers/${{ matrix.server }}
-        # NOTE: there are pre-existing pyright errors in both sub-packages
-        # (4 in veo, 61 in nanobanana) that are out of scope for the
-        # launch-prep CI fix. Switch to a hard gate after a dedicated
-        # cleanup PR. The check still runs so we see new errors.
-        run: uv run --with pyright pyright . || true
-        continue-on-error: true
+        # 2026-11-05: veo has 0 errors; nanobanana has 62 legacy type errors.
+        # Keep only nanobanana nonblocking until its dedicated typing cleanup.
+        run: uv run --with pyright pyright .
+        continue-on-error: ${{ matrix.server == 'nanobanana' }}
 
       - name: Build wheel + sdist
         working-directory: servers/${{ matrix.server }}

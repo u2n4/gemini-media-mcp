@@ -25,7 +25,27 @@ on:
       - "nanobanana-imagen-v*.*.*"
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        server: [veo, nanobanana]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Test tagged commit without Gemini credentials
+        working-directory: servers/${{ matrix.server }}
+        run: env -u GEMINI_API_KEY -u GOOGLE_API_KEY -u GEMINI_API_KEY_BACKUP uv run --locked pytest tests -q
+
   publish-veo:
+    needs: test
     if: startsWith(github.ref, 'refs/tags/veo-v')
     runs-on: ubuntu-latest
     environment: pypi
@@ -50,6 +70,7 @@ jobs:
           packages-dir: servers/veo/dist
 
   publish-nanobanana:
+    needs: test
     if: startsWith(github.ref, 'refs/tags/nanobanana-imagen-v')
     runs-on: ubuntu-latest
     environment: pypi

@@ -219,26 +219,3 @@ def test_veo_image_to_video_rejects_bad_image_path():
             prompt="animate",
             image_path=r"C:\Windows\System32\notepad.exe",
         )
-
-
-def test_veo_extend_video_rejects_bad_video_uri():
-    """veo_extend_video must reject non-Gemini URIs."""
-    from veo_mcp_server.server import veo_extend_video
-
-    with pytest.raises(ValidationError):
-        veo_extend_video(
-            prompt="continue",
-            video_uri="file:///etc/passwd",
-        )
-
-
-def test_veo_interpolate_video_rejects_bad_frame_path():
-    """veo_interpolate_video must reject frame paths targeting user dotfiles."""
-    from veo_mcp_server.server import veo_interpolate_video
-
-    with pytest.raises(ValidationError):
-        veo_interpolate_video(
-            prompt="blend",
-            first_frame_path="~/.ssh/id_rsa.png",
-            last_frame_path="~/.ssh/id_rsa.png",
-        )

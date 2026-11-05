@@ -4,7 +4,7 @@ CLI smoke tests for nanobanana-imagen-mcp.
 These tests verify:
   (a) The package can be imported with no API keys in the environment
       without triggering sys.exit (lazy init check).
-  (b) `nanobanana-imagen-mcp --help` exits 0 with a dummy GEMINI_API_KEY.
+  (b) `nanobanana-imagen-mcp --help` exits 0 without API keys.
   (c) `nanobanana-imagen-mcp --version` exits 0 and prints the version string
       (skipped when running from source tree without the package installed).
   (d) Import does not create ~/nanobanana-images (lazy mkdir check).
@@ -22,7 +22,6 @@ import sys
 def _base_env(tmp_path) -> dict:
     """Minimal Windows-safe environment for subprocess calls."""
     env = {
-        "GEMINI_API_KEY": "dummy-key-for-testing",
         "IMAGE_OUTPUT_DIR": str(tmp_path / "nanobanana-images"),
         "PATH": os.environ.get("PATH", ""),
     }
@@ -53,7 +52,6 @@ def test_import_no_env(tmp_path):
     first actual tool call.
     """
     env = _base_env(tmp_path)
-    env["GEMINI_API_KEY"] = ""  # no key — should NOT exit at import
 
     result = subprocess.run(
         [
@@ -73,9 +71,9 @@ def test_import_no_env(tmp_path):
     assert "import ok" in result.stdout
 
 
-def test_help_with_dummy_env(tmp_path):
+def test_help_without_keys(tmp_path):
     """
-    `nanobanana-imagen-mcp --help` must exit 0 with a dummy GEMINI_API_KEY.
+    `nanobanana-imagen-mcp --help` must exit 0 without API keys.
     No actual API call is made; argparse exits before any client is built.
     """
     env = _base_env(tmp_path)
@@ -97,7 +95,7 @@ def test_help_with_dummy_env(tmp_path):
     )
 
 
-def test_version_with_dummy_env(tmp_path):
+def test_version_without_keys(tmp_path):
     """
     `nanobanana-imagen-mcp --version` must exit 0 and print a version string.
 
@@ -140,7 +138,6 @@ def test_no_home_pollution(tmp_path):
     env = _base_env(tmp_path)
     env["HOME"] = str(fake_home)
     env["USERPROFILE"] = str(fake_home)
-    env["GEMINI_API_KEY"] = ""
     # No IMAGE_OUTPUT_DIR so it would default to ~/nanobanana-images if eager
     env.pop("IMAGE_OUTPUT_DIR", None)
 
@@ -208,7 +205,6 @@ def test_initialize_services_honors_db_path_env_var(tmp_path, monkeypatch):
     per the README would silently get disk-backed storage anyway.
     """
     monkeypatch.setenv("NANOBANANA_DB_PATH", ":memory:")
-    monkeypatch.setenv("GEMINI_API_KEY", "test-dummy-key")
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setenv("USERPROFILE", str(tmp_path))
 
@@ -218,7 +214,7 @@ def test_initialize_services_honors_db_path_env_var(tmp_path, monkeypatch):
     importlib.reload(services_pkg)
 
     from nanobanana_mcp_server.config.settings import ServerConfig, GeminiConfig
-    server_config = ServerConfig.from_env()
+    server_config = ServerConfig(image_output_dir=str(tmp_path / "images"))
     gemini_config = GeminiConfig()
     services_pkg.initialize_services(server_config, gemini_config)
 

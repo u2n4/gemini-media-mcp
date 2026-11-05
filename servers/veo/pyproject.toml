@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "veo-mcp-server"
-version = "1.1.5"
-description = "MCP server for 4K video generation using Google VEO 3.1 -- text-to-video, image-to-video, video extension"
+version = "1.2.0"
+description = "MCP server for video generation using Gemini Omni -- text-to-video and image-to-video"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
@@ -28,8 +28,8 @@ classifiers = [
     "Topic :: Multimedia :: Video",
 ]
 dependencies = [
-    "mcp>=1.0.0",
-    "google-genai>=1.5.0",
+    "mcp>=1.0.0,<2",
+    "google-genai>=2.5.0,<3",
     "httpx>=0.24.0",
     "python-dotenv>=1.0.0",
 ]
@@ -43,3 +43,8 @@ veo-mcp-server = "veo_mcp_server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/veo_mcp_server"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]

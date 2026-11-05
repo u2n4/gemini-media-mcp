@@ -141,7 +141,7 @@ class ProImageService:
                     )
 
                     # Build generation config for Pro model
-                    # Note: thinking_level is NOT supported by gemini-3-pro-image-preview
+                    # Note: thinking_level is NOT supported by gemini-3-pro-image
                     # Resolution is passed and mapped to image_size in gemini_client
                     gen_config = {
                         "resolution": resolution,  # Will be mapped to image_size (1K, 2K, 4K)
