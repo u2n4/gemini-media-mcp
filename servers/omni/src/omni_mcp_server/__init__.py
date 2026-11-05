@@ -1,9 +1,9 @@
-"""VEO MCP Server -- 4K video generation with Google VEO 3.1."""
+"""Omni MCP Server -- video generation with Gemini Omni."""
 
 try:
     from importlib.metadata import version, PackageNotFoundError
     try:
-        __version__ = version("veo-mcp-server")
+        __version__ = version("omni-mcp-server")
     except PackageNotFoundError:
         __version__ = "0.0.0+local"
 except ImportError:

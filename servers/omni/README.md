@@ -1,15 +1,15 @@
 # Gemini Omni Video MCP Server
 
-<!-- mcp-name: io.github.u2n4/veo-mcp-server -->
+<!-- mcp-name: io.github.u2n4/omni-mcp-server -->
 
 MCP server for Gemini Omni video generation with background jobs, API key rotation, and SDK downloads.
 
 ## Quick Install
 
 ```bash
-pip install veo-mcp-server
+pip install omni-mcp-server
 # or
-uvx veo-mcp-server --help
+uvx omni-mcp-server --help
 ```
 
 **Claude Desktop (`claude_desktop_config.json`):**
@@ -17,9 +17,9 @@ uvx veo-mcp-server --help
 ```json
 {
   "mcpServers": {
-    "veo": {
+    "omni": {
       "command": "uvx",
-      "args": ["veo-mcp-server"],
+      "args": ["omni-mcp-server"],
       "env": {
         "GEMINI_API_KEY": "your_key_here"
       }
@@ -32,7 +32,7 @@ uvx veo-mcp-server --help
 |----------|-------------|---------|
 | `GEMINI_API_KEY` | Gemini API key — required for all generation | -- |
 | `GEMINI_API_KEY_BACKUP` | Backup key for automatic rotation on 429 | -- |
-| `VIDEO_OUTPUT_DIR` | Directory where generated videos are saved | `~/veo-videos` |
+| `VIDEO_OUTPUT_DIR` | Directory where generated videos are saved | `~/omni-videos` |
 
 ## What It Does
 
@@ -42,15 +42,15 @@ Generates videos using `gemini-omni-1.2-flash` through the Interactions API. Sup
 
 | Tool | Description |
 |------|-------------|
-| `veo_generate_video` | Generate from text: 3–15 seconds (default 10), 360p/720p/1080p/4k, 16:9 or 9:16. Optional comma-separated `reference_image_paths` accepts 1–6 subject images. Returns a background job ID. |
-| `veo_image_to_video` | Animate a JPEG, PNG or WebP with a text prompt; same duration, resolution and aspect options. |
-| `veo_extend_video` | Continue a completed `source_job_id` or Gemini Files API `video_uri`; 3–10 seconds per turn (default 10), 720p, up to 30 seconds total. Returns a job ID. |
-| `veo_interpolate_video` | Transition from `first_frame_path` to `last_frame_path` (JPEG/PNG/WebP); 3–10 seconds (default 10), 360p/720p/1080p/4k. Returns a job ID. |
-| `veo_check_job` | Check the status of an async video generation job. Call repeatedly until status is 'completed' or 'failed'. |
-| `veo_list_jobs` | List all video generation jobs and their current status. |
-| `veo_api_status` | Show current API key rotation status — keys configured, active key, keys remaining. |
-| `veo_pricing_info` | Link to current Gemini Omni pricing documentation. |
-| `veo_show_output_stats` | Display statistics about generated videos and active/recent jobs. |
+| `omni_generate_video` | Generate from text: 3–15 seconds (default 10), 360p/720p/1080p/4k, 16:9 or 9:16. Optional comma-separated `reference_image_paths` accepts 1–6 subject images. Returns a background job ID. |
+| `omni_image_to_video` | Animate a JPEG, PNG or WebP with a text prompt; same duration, resolution and aspect options. |
+| `omni_extend_video` | Continue a completed `source_job_id` or Gemini Files API `video_uri`; 3–10 seconds per turn (default 10), 720p, up to 30 seconds total. Returns a job ID. |
+| `omni_interpolate_video` | Transition from `first_frame_path` to `last_frame_path` (JPEG/PNG/WebP); 3–10 seconds (default 10), 360p/720p/1080p/4k. Returns a job ID. |
+| `omni_check_job` | Check the status of an async video generation job. Call repeatedly until status is 'completed' or 'failed'. |
+| `omni_list_jobs` | List all video generation jobs and their current status. |
+| `omni_api_status` | Show current API key rotation status — keys configured, active key, keys remaining. |
+| `omni_pricing_info` | Link to current Gemini Omni pricing documentation. |
+| `omni_show_output_stats` | Display statistics about generated videos and active/recent jobs. |
 
 ## Configuration
 
@@ -58,7 +58,7 @@ Generates videos using `gemini-omni-1.2-flash` through the Interactions API. Sup
 |----------|-------------|---------|
 | `GEMINI_API_KEY` | Primary Gemini API key (required) | -- |
 | `GEMINI_API_KEY_BACKUP` | Backup key for automatic rotation on 429 | -- |
-| `VIDEO_OUTPUT_DIR` | Directory where generated videos are saved | `~/veo-videos` |
+| `VIDEO_OUTPUT_DIR` | Directory where generated videos are saved | `~/omni-videos` |
 
 ## Architecture
 
@@ -73,11 +73,11 @@ Generates videos using `gemini-omni-1.2-flash` through the Interactions API. Sup
 | Standard | `gemini-omni-1.2-flash` | Default model |
 | Fast | `gemini-omni-1.2-flash` | Compatibility alias; same model as Standard |
 
-## Migration and verification (1.2.0)
+## Migration and verification (2.0.0)
 
-The VEO 3.1 preview models shut down on 2026-10-22. All four generation tool names
-and background jobs are available on Omni, including extension and first/last-frame
-interpolation. `reference_image_paths` is available on `veo_generate_video`.
+The distribution, command and all nine tools have new names in 2.0.0;
+see the [migration table](CHANGELOG.md#200--2026-11-05). Background jobs,
+extension and first/last-frame interpolation retain their Omni behavior. `reference_image_paths` is available on `omni_generate_video`.
 Legacy seed, batch and negative-prompt parameters remain unavailable because the
 Omni docs do not confirm their video-specific behavior/request shape. Duration
 defaults to 10 seconds and is validated without silently changing it: 3–15 for

@@ -1,9 +1,32 @@
 # Changelog
 
-All notable changes to `veo-mcp-server` are documented in this file.
+All notable changes to `omni-mcp-server` are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
+
+## [2.0.0] — 2026-11-05
+
+- `omni-mcp-server` replaces `veo-mcp-server`; this is a breaking naming change.
+- Rename the server folder to `servers/omni`, package to `omni_mcp_server`,
+  console script to `omni-mcp-server`, and prompting plugin/skill to `omni-prompting`.
+- Update client configurations to the new distribution, command and tool names;
+  old names are no longer registered. Gemini Omni request behavior is unchanged.
+- Default output directory is now `~/omni-videos`; the generic file prefix is `omni`.
+  Set `VIDEO_OUTPUT_DIR` to keep an existing output location.
+- Release tags use `omni-v*.*.*`. Python 3.10 remains supported.
+
+| Old tool name | New tool name |
+|---------------|---------------|
+| `veo_generate_video` | `omni_generate_video` |
+| `veo_image_to_video` | `omni_image_to_video` |
+| `veo_extend_video` | `omni_extend_video` |
+| `veo_interpolate_video` | `omni_interpolate_video` |
+| `veo_check_job` | `omni_check_job` |
+| `veo_list_jobs` | `omni_list_jobs` |
+| `veo_api_status` | `omni_api_status` |
+| `veo_pricing_info` | `omni_pricing_info` |
+| `veo_show_output_stats` | `omni_show_output_stats` |
 
 ## [1.2.0] — 2026-11-05
 

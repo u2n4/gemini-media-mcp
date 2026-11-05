@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "veo-mcp-server"
-version = "1.2.0"
+name = "omni-mcp-server"
+version = "2.0.0"
 description = "MCP server for video generation using Gemini Omni -- text-to-video and image-to-video"
 readme = "README.md"
 license = "MIT"
@@ -13,7 +13,7 @@ authors = [
     { name = "u2n4" },
 ]
 keywords = [
-    "mcp", "model-context-protocol", "claude", "veo", "gemini",
+    "mcp", "model-context-protocol", "claude", "omni", "gemini",
     "video-generation", "text-to-video", "4k", "ai-video",
 ]
 classifiers = [
@@ -39,10 +39,10 @@ Homepage = "https://github.com/u2n4/gemini-media-mcp"
 Repository = "https://github.com/u2n4/gemini-media-mcp"
 
 [project.scripts]
-veo-mcp-server = "veo_mcp_server:main"
+omni-mcp-server = "omni_mcp_server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/veo_mcp_server"]
+packages = ["src/omni_mcp_server"]
 
 [dependency-groups]
 dev = [

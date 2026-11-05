@@ -1,4 +1,4 @@
-"""Internal utilities for veo-mcp-server (validation, etc.)."""
+"""Internal utilities for omni-mcp-server (validation, etc.)."""
 
 from .validation import (
     IMAGE_EXTENSIONS,

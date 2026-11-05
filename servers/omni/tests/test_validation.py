@@ -1,4 +1,4 @@
-"""Security tests for veo_mcp_server.core.validation + tool-level wiring.
+"""Security tests for omni_mcp_server.core.validation + tool-level wiring.
 
 Covers threat-model items 3.1 (arbitrary file write/read via output_path /
 image_path) and 3.3 (SSRF via video_uri).
@@ -11,7 +11,7 @@ import os
 
 import pytest
 
-from veo_mcp_server.core.validation import (
+from omni_mcp_server.core.validation import (
     ValidationError,
     validate_file_path,
     validate_output_path,
@@ -204,23 +204,23 @@ def test_video_uri_rejects_over_long():
 # ---------- tool-level wiring (one test per tool) ----------
 
 
-def test_veo_generate_video_rejects_bad_output_path():
-    """veo_generate_video must reject a malicious output_path before starting a thread."""
-    from veo_mcp_server.server import veo_generate_video
+def test_omni_generate_video_rejects_bad_output_path():
+    """omni_generate_video must reject a malicious output_path before starting a thread."""
+    from omni_mcp_server.server import omni_generate_video
 
     with pytest.raises(ValidationError):
-        veo_generate_video(
+        omni_generate_video(
             prompt="test",
             output_path=str(Path.home() / ".ssh" / "evil.mp4"),
         )
 
 
-def test_veo_image_to_video_rejects_bad_image_path():
-    """veo_image_to_video must reject an image_path that targets system files."""
-    from veo_mcp_server.server import veo_image_to_video
+def test_omni_image_to_video_rejects_bad_image_path():
+    """omni_image_to_video must reject an image_path that targets system files."""
+    from omni_mcp_server.server import omni_image_to_video
 
     with pytest.raises(ValidationError):
-        veo_image_to_video(
+        omni_image_to_video(
             prompt="animate",
             image_path=r"C:\Windows\System32\notepad.exe",
         )

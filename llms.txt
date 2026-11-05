@@ -1,6 +1,6 @@
 # Gemini Media MCP
 
-> All-in-one MCP toolkit for AI media generation -- VEO 3.1 video + NanoBanana Pro 2 images + prompting skills
+> All-in-one MCP toolkit for AI media generation -- Gemini Omni video + NanoBanana Pro 2 images + prompting skills
 
 ## Overview
 
@@ -8,17 +8,17 @@ Gemini Media MCP is a monorepo containing 2 MCP servers and 2 Claude Code prompt
 
 ## MCP Servers
 
-### VEO 3.1 Server (servers/veo/server.py)
+### Gemini Omni Server (servers/omni/src/omni_mcp_server/server.py)
 - 9 tools for AI video generation
 - Text-to-video, image-to-video, video extension, frame interpolation
 - Async job pattern with background processing
 - API key rotation on quota exhaustion
-- 3-layer download fallback (SDK, URI, ACTIVE wait)
-- Supports 720p, 1080p, 4K resolution
-- Supports 4, 6, 8 second durations
-- Seed control and batch generation (1-4 videos)
+- SDK download after URI file ACTIVE polling; inline base64 also supported
+- Supports 360p, 720p, 1080p and 4k resolution
+- Text/single-image duration: 3-15 seconds; extension/interpolation: 3-10; default 10
+- Up to 6 subject reference images; no seed, batch or negative-prompt parameters
 
-Tools: veo_generate_video, veo_image_to_video, veo_interpolate_video, veo_extend_video, veo_check_job, veo_list_jobs, veo_api_status, veo_pricing_info, veo_show_output_stats
+Tools: omni_generate_video, omni_image_to_video, omni_interpolate_video, omni_extend_video, omni_check_job, omni_list_jobs, omni_api_status, omni_pricing_info, omni_show_output_stats
 
 ### NanoBanana Server (servers/nanobanana/)
 - 4 tools for AI image generation
@@ -31,8 +31,8 @@ Tools: generate_image, upload_file, show_output_stats, maintenance
 
 ## Claude Code Skills
 
-### VEO Prompting (skills/veo-prompting/SKILL.md)
-7-layer prompt engineering for cinematic VEO 3.1 videos: Cinematography, Subject, Action, Environment, Lighting & Mood, Audio Design, Technical Controls.
+### Omni Prompting (skills/omni-prompting/SKILL.md)
+Prompt planning for Gemini Omni: cinematography, subject, action, environment, lighting, continuity and supported tool controls.
 
 ### NanoBanana Prompting (skills/nanobanana-prompting/SKILL.md)
 7-layer prompt engineering for photorealistic NanoBanana Pro 2 images: Style & Art Direction, Scene Description, Main Subject, Camera & Lens, Lighting, Texture/Material/Color, Negative Prompts.
@@ -40,7 +40,7 @@ Tools: generate_image, upload_file, show_output_stats, maintenance
 ## Requirements
 
 - Python 3.10+
-- google-genai >= 1.5.0
+- google-genai >= 2.5.0, < 3
 - GEMINI_API_KEY environment variable
 
 ## Installation

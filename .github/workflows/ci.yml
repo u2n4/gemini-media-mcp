@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
-        server: [veo, nanobanana]
+        server: [omni, nanobanana]
 
     steps:
       - uses: actions/checkout@v5
@@ -34,7 +34,7 @@ jobs:
 
       - name: Type check with pyright
         working-directory: servers/${{ matrix.server }}
-        # 2026-11-05: veo has 0 errors; nanobanana has 62 legacy type errors.
+        # 2026-11-05: omni has 0 errors; nanobanana has 62 legacy type errors.
         # Keep only nanobanana nonblocking until its dedicated typing cleanup.
         run: uv run --with pyright pyright .
         continue-on-error: ${{ matrix.server == 'nanobanana' }}

@@ -3,8 +3,8 @@ Gemini Omni MCP Server — Gemini Omni Video Generation
 Professional-grade MCP server with async job pattern.
 
 Architecture:
-  - veo_generate_video() starts generation in background, returns job_id instantly
-  - veo_check_job() reads job progress; workers poll file status and download
+  - omni_generate_video() starts generation in background, returns job_id instantly
+  - omni_check_job() reads job progress; workers poll file status and download
   - Background threads handle the long-running Google API calls
   - No more timeout issues — each MCP call returns in < 5 seconds
 """
@@ -35,9 +35,9 @@ from .core.validation import (
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 handler = logging.StreamHandler(sys.stderr)
-handler.setFormatter(logging.Formatter("[VEO] %(asctime)s %(levelname)s: %(message)s", datefmt="%H:%M:%S"))
+handler.setFormatter(logging.Formatter("[OMNI] %(asctime)s %(levelname)s: %(message)s", datefmt="%H:%M:%S"))
 handler.setLevel(logging.INFO)
-log = logging.getLogger("veo")
+log = logging.getLogger("omni")
 log.setLevel(logging.INFO)
 log.addHandler(handler)
 log.propagate = False
@@ -51,12 +51,12 @@ API_KEYS: list[str] = [k for k in _RAW_KEYS if k.strip()]
 
 VIDEO_OUTPUT_DIR: str = os.environ.get(
     "VIDEO_OUTPUT_DIR",
-    str(Path.home() / "veo-videos"),
+    str(Path.home() / "omni-videos"),
 )
 
 # ── API Key Rotation Manager ────────────────────────────────────────────────
 
-class VEOClientManager:
+class OmniClientManager:
     """Manages multiple Gemini API keys with automatic rotation on 429."""
 
     def __init__(self, api_keys: list[str]):
@@ -99,22 +99,22 @@ class VEOClientManager:
         )
 
 
-_manager: Optional[VEOClientManager] = None
+_manager: Optional[OmniClientManager] = None
 _manager_lock = threading.Lock()
 
 _output_path: Optional[Path] = None
 _output_path_lock = threading.Lock()
 
 
-def _get_manager() -> VEOClientManager:
-    """Lazy accessor for the VEO client manager (thread-safe double-checked locking)."""
+def _get_manager() -> OmniClientManager:
+    """Lazy accessor for the Omni client manager (thread-safe double-checked locking)."""
     global _manager
     if _manager is None:
         with _manager_lock:
             if _manager is None:
                 if not API_KEYS:
                     raise RuntimeError("GEMINI_API_KEY is required to generate videos or access the API.")
-                _manager = VEOClientManager(API_KEYS)
+                _manager = OmniClientManager(API_KEYS)
     return _manager
 
 
@@ -132,7 +132,7 @@ def _get_output_path() -> Path:
 
 
 # ── MCP Server ───────────────────────────────────────────────────────────────
-mcp = FastMCP("veo_mcp")
+mcp = FastMCP("omni_mcp")
 
 # ── Constants ────────────────────────────────────────────────────────────────
 MODELS = {
@@ -161,7 +161,7 @@ def _ts() -> str:
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 
-def _resolve_output(output_path: str | None, prefix: str = "veo") -> Path:
+def _resolve_output(output_path: str | None, prefix: str = "omni") -> Path:
     if output_path:
         # Security: force .mp4 extension BEFORE validation so we validate the
         # actual path we intend to write.
@@ -221,7 +221,7 @@ def _start_job(prompt, model, resolution, output_path, prefix, job_type, generat
     threading.Thread(target=_run_generation_job,
                      args=(job_id, generate_fn, output_file), daemon=True).start()
     return (f"Video generation started!\n  Job ID: {job_id}\n  Model: {model}\n"
-            f'Use veo_check_job(job_id="{job_id}") to check progress.')
+            f'Use omni_check_job(job_id="{job_id}") to check progress.')
 
 
 def _call_with_rotation(fn):
@@ -322,8 +322,8 @@ def _run_generation_job(job_id: str, generate_fn, output_file: Path):
 
 # ── MCP Tools ────────────────────────────────────────────────────────────────
 
-@mcp.tool(name="veo_generate_video")
-def veo_generate_video(
+@mcp.tool(name="omni_generate_video")
+def omni_generate_video(
     prompt: str,
     model_tier: str = "standard",
     resolution: str = "1080p",
@@ -332,7 +332,7 @@ def veo_generate_video(
     output_path: str = "",
     reference_image_paths: str = "",
 ) -> str:
-    """Generate an Omni video; returns a job ID for veo_check_job.
+    """Generate an Omni video; returns a job ID for omni_check_job.
 
     standard and fast are compatibility aliases for gemini-omni-1.2-flash.
     Duration is 3-15 seconds; resolution is 360p, 720p, 1080p or 4k.
@@ -375,17 +375,17 @@ def veo_generate_video(
                      args=(job_id, generate_fn, output_file), daemon=True).start()
     return (f"Video generation started!\n  Job ID: {job_id}\n  Model: {model}\n"
             f"  Duration: {duration_seconds}s\n"
-            f'Use veo_check_job(job_id="{job_id}") to check progress.')
+            f'Use omni_check_job(job_id="{job_id}") to check progress.')
 
 
-@mcp.tool(name="veo_check_job")
-def veo_check_job(job_id: str) -> str:
-    """Check the status of a VEO video generation job.
+@mcp.tool(name="omni_check_job")
+def omni_check_job(job_id: str) -> str:
+    """Check the status of a Omni video generation job.
 
     Call this repeatedly (every 15-20 seconds) until status is 'completed' or 'failed'.
 
     Args:
-        job_id: The job ID returned by veo_generate_video or other generation tools.
+        job_id: The job ID returned by omni_generate_video or other generation tools.
 
     Returns:
         Current job status with details.
@@ -425,15 +425,15 @@ def veo_check_job(job_id: str) -> str:
     return "\n".join(lines)
 
 
-@mcp.tool(name="veo_list_jobs")
-def veo_list_jobs() -> str:
+@mcp.tool(name="omni_list_jobs")
+def omni_list_jobs() -> str:
     """List all video generation jobs and their current status.
 
     Returns:
         Summary of all jobs.
     """
     if not jobs:
-        return "No jobs yet. Use veo_generate_video to start one."
+        return "No jobs yet. Use omni_generate_video to start one."
 
     lines = ["Active Jobs:", "-" * 50]
     for jid, job in sorted(jobs.items(), key=lambda x: x[1].get("started_at", ""), reverse=True):
@@ -450,8 +450,8 @@ def veo_list_jobs() -> str:
     return "\n".join(lines)
 
 
-@mcp.tool(name="veo_image_to_video")
-def veo_image_to_video(
+@mcp.tool(name="omni_image_to_video")
+def omni_image_to_video(
     prompt: str,
     image_path: str,
     model_tier: str = "standard",
@@ -460,7 +460,7 @@ def veo_image_to_video(
     output_path: str = "",
     duration_seconds: int = 10,
 ) -> str:
-    """Animate a local JPEG, PNG or WebP with Omni; poll using veo_check_job.
+    """Animate a local JPEG, PNG or WebP with Omni; poll using omni_check_job.
 
     standard and fast both select gemini-omni-1.2-flash. Duration: 3-15 seconds.
     """
@@ -495,11 +495,11 @@ def veo_image_to_video(
     threading.Thread(target=_run_generation_job,
                      args=(job_id, generate_fn, output_file), daemon=True).start()
     return (f"Image-to-Video generation started!\n  Job ID: {job_id}\n  Model: {model}\n"
-            f'Use veo_check_job(job_id="{job_id}") to check progress.')
+            f'Use omni_check_job(job_id="{job_id}") to check progress.')
 
 
-@mcp.tool(name="veo_extend_video")
-def veo_extend_video(
+@mcp.tool(name="omni_extend_video")
+def omni_extend_video(
     prompt: str,
     source_job_id: str = "",
     video_uri: str = "",
@@ -509,7 +509,7 @@ def veo_extend_video(
     """Extend an Omni video by 3-10 seconds (default 10), up to 30 seconds total.
 
     Provide a completed source_job_id or a Gemini Files API video_uri.
-    Returns a job ID; poll with veo_check_job. Output resolution is 720p.
+    Returns a job ID; poll with omni_check_job. Output resolution is 720p.
     """
     _validate_duration(duration_seconds, 10)
     previous_id = ""
@@ -556,8 +556,8 @@ def veo_extend_video(
                       "ext", "extend-video", generate_fn)
 
 
-@mcp.tool(name="veo_interpolate_video")
-def veo_interpolate_video(
+@mcp.tool(name="omni_interpolate_video")
+def omni_interpolate_video(
     prompt: str,
     first_frame_path: str,
     last_frame_path: str,
@@ -568,7 +568,7 @@ def veo_interpolate_video(
 ) -> str:
     """Generate a 3-10 second transition between first and last frame images.
 
-    Images must be local JPEG, PNG or WebP files. Returns a job ID for veo_check_job.
+    Images must be local JPEG, PNG or WebP files. Returns a job ID for omni_check_job.
     standard and fast both select gemini-omni-1.2-flash.
     """
     _validate_duration(duration_seconds, 10)
@@ -592,8 +592,8 @@ def veo_interpolate_video(
                       "interp", "interpolate", generate_fn)
 
 
-@mcp.tool(name="veo_show_output_stats")
-def veo_show_output_stats() -> str:
+@mcp.tool(name="omni_show_output_stats")
+def omni_show_output_stats() -> str:
     """Show statistics about generated videos and active/recent jobs.
 
     Returns:
@@ -644,14 +644,14 @@ def veo_show_output_stats() -> str:
     return "\n".join(lines)
 
 
-@mcp.tool(name="veo_pricing_info")
-def veo_pricing_info() -> str:
-    """Link to current Omni pricing; no obsolete VEO price estimates."""
+@mcp.tool(name="omni_pricing_info")
+def omni_pricing_info() -> str:
+    """Link to current Omni pricing; see the official documentation for rates."""
     return "Gemini Omni pricing: https://aistudio.google.com/docs/omni (check current pricing)."
 
 
-@mcp.tool(name="veo_api_status")
-def veo_api_status() -> str:
+@mcp.tool(name="omni_api_status")
+def omni_api_status() -> str:
     """Show current API key rotation status.
 
     Displays how many keys are configured, which key is currently active,
@@ -661,7 +661,7 @@ def veo_api_status() -> str:
         API key status summary.
     """
     lines = [
-        "=== VEO API Key Status ===",
+        "=== Omni API Key Status ===",
         f"  Keys configured: {len(_get_manager().clients)}",
         f"  Currently using: Key #{_get_manager().current_index + 1}",
         f"  Keys remaining: {len(_get_manager().clients) - _get_manager().current_index}",
@@ -679,7 +679,7 @@ def main():
     from . import __version__
 
     parser = argparse.ArgumentParser(
-        prog="veo-mcp-server",
+        prog="omni-mcp-server",
         description="Gemini Omni MCP Server — video generation via Gemini Omni",
         add_help=True,
     )

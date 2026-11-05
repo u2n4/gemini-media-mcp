@@ -1,4 +1,4 @@
-"""Filesystem path and URI validation for veo-mcp-server.
+"""Filesystem path and URI validation for omni-mcp-server.
 
 Prevents:
 - Arbitrary filesystem WRITE via ``output_path`` (e.g. overwriting
@@ -222,7 +222,7 @@ def validate_video_uri(
     uri: str,
     allowed_prefixes: Tuple[str, ...] = ALLOWED_VIDEO_URI_PREFIXES,
 ) -> str:
-    """Validate a VEO-extensible video URI.
+    """Validate a Omni-extensible video URI.
 
     - Must start with an allowed prefix (Gemini / Vertex AI Files API).
     - Rejects ``file://``, ``ftp://``, ``gopher://``, ``http://`` (non-TLS),
