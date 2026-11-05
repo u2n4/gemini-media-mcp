@@ -1,7 +1,7 @@
 """Gemini 3 Pro Image specialized service for high-quality generation."""
 
 import base64
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 import hashlib
 from io import BytesIO
 import logging
@@ -179,7 +179,7 @@ class ProImageService:
                         # Storage handling - custom output_path takes precedence
                         if output_path:
                             # Save directly to specified output path
-                            timestamp = datetime.now(tz=UTC).strftime("%Y%m%d_%H%M%S")
+                            timestamp = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
                             image_hash = hashlib.md5(
                                 image_bytes, usedforsecurity=False
                             ).hexdigest()[:8]
