@@ -15,6 +15,7 @@ from ..utils.image_utils import create_thumbnail, validate_image_format
 from ..utils.validation_utils import resolve_output_path
 from ..config.settings import GeminiConfig
 from ..config.constants import THUMBNAIL_SIZE, TEMP_FILE_SUFFIX
+from ..core.exceptions import AuthenticationError
 from PIL import Image as PILImage
 import os
 import logging
@@ -154,6 +155,8 @@ class EnhancedImageService:
                         all_thumbnail_images.append(thumbnail_image)
                         all_metadata.append(metadata)
 
+                except AuthenticationError:
+                    raise
                 except Exception as e:
                     self.logger.error(f"Failed to generate image {i + 1}: {e}")
                     # Continue with other images rather than failing completely

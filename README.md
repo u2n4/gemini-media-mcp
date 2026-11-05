@@ -43,7 +43,7 @@ Gemini Media MCP is a comprehensive toolkit that brings Google's most powerful A
 
 | Server | Description | Tools |
 |--------|-------------|-------|
-| **Gemini Omni (VEO server)** | AI video generation (text-to-video, image-to-video) | 7 tools |
+| **Gemini Omni (VEO server)** | AI video generation, reference images, extension and first/last-frame interpolation | 9 tools |
 | **NanoBanana** | AI image generation with NanoBanana Pro 2 (Pro + Flash models) | 4 tools |
 
 ### Claude Code Skills (Plugin Marketplace)
@@ -143,8 +143,10 @@ AI video generation powered by `gemini-omni-1.2-flash` through the Interactions 
 
 | Tool | Description |
 |------|-------------|
-| `veo_generate_video` | Generate from text: 3–15 seconds (default 10), 360p/720p/1080p/4k, 16:9 or 9:16. Returns a background job ID. |
+| `veo_generate_video` | Generate from text: 3–15 seconds (default 10), 360p/720p/1080p/4k, 16:9 or 9:16. Optional comma-separated `reference_image_paths` accepts 1–6 subject images. Returns a background job ID. |
 | `veo_image_to_video` | Animate a JPEG, PNG or WebP with a text prompt; same duration, resolution and aspect options. |
+| `veo_extend_video` | Extend a completed `source_job_id` or Gemini Files API `video_uri`; 3–10 seconds per turn (default 10), 720p, up to 30 seconds total (API enforced). Returns a job ID. |
+| `veo_interpolate_video` | Transition between `first_frame_path` and `last_frame_path`; 3–10 seconds (default 10), 360p/720p/1080p/4k. Returns a job ID. |
 | `veo_check_job` | Check async job status. Call every 15-20 seconds until completed or failed. |
 | `veo_list_jobs` | List all generation jobs and their current status. |
 | `veo_api_status` | Check API key status -- keys configured, active key, keys remaining. |
@@ -280,6 +282,12 @@ Made with ❤️ in the Eastern Province of Saudi Arabia.
 
 Gemini paths were tested only with a fake client and never live. Both API keys
 were unset for all test runs; tests block real SDK clients and HTTP requests.
+Omni extension/interpolation and reference-image request shapes were checked
+against [Google's Omni docs](https://aistudio.google.com/docs/omni),
+[full docs](https://aistudio.google.com/llms-full.txt) and installed SDK source.
+Legacy video seed, batch and negative-prompt shapes remain unconfirmed and unavailable.
+NanoBanana starts and lists tools without credentials; Gemini-dependent tools
+return a clear error naming `GEMINI_API_KEY` when no key is configured.
 `gemini-3.1-flash-image` is also listed as Stable; this server's Flash route uses
 the documented preview replacement `gemini-nano-banana-2.1`.
 
