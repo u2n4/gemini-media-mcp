@@ -12,7 +12,7 @@ _SYSTEM_DIRS = (
 )
 _SENSITIVE_PARTS = {
     ".ssh", ".aws", ".gnupg", ".gcp", ".docker", ".kube", ".netrc",
-    ".git-credentials", ".env", ".codex", ".claude", ".grok",
+    ".git-credentials", ".env", ".codex", ".claude", ".grok", ".gemini",
 }
 _SENSITIVE_DIRS = (
     ".config/gh", ".config/gcloud", ".config/claude",
