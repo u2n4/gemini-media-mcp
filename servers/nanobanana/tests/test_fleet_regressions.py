@@ -48,7 +48,7 @@ def test_absolute_relative_and_dotted_files(tmp_path, monkeypatch):
     assert validate_file_path(image.name) == image
 
 
-@pytest.mark.parametrize("path", ["../image.png", "dir/../image.png", r"dir\..\image.png",
+@pytest.mark.parametrize("path", ["~/.gemini/oauth_creds.json", "../image.png", "dir/../image.png", r"dir\..\image.png",
     "/etc/passwd", "//etc/passwd", r"C:\Windows\image.png", r"\\?\C:\Windows\image.png",
     "~/.ssh/key.png", "~/.aws/credentials", "~/.config/gcloud/key.png", "x\x00.png"])
 def test_sensitive_and_traversal_paths(path):

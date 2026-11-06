@@ -78,6 +78,7 @@ _BLOCKED_HOME_SUBDIRS: Tuple[str, ...] = (
     ".config/claude",
     ".config/gcloud",
     ".codex",
+    ".gemini",
     ".claude",
     "AppData/Roaming/Microsoft",
     "AppData/Roaming/Google/Chrome",
